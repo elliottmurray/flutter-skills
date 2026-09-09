@@ -28,18 +28,18 @@ Once this repo is on GitHub:
 |---|---|
 | `/setup-project` | Implemented — interview, `flutter create`, templates, pre-commit |
 | `/tdd` | Implemented — Flutter red-green-refactor |
-| `/feature-flags` | Stub |
+| `/complexity` | Implemented — report, ratchet, hotspot pass |
+| `/feature-flags` | Implemented — add / graduate / delete Remote Config flags |
+| `/flutter-sdk-check` | Implemented — bump pinned `flutter-version` |
+| `/pr-review` | Implemented — risk rubric; `@claude` workflow unchanged |
 | `/ios-ci-setup` | Stub |
 | `/self-hosted-runner` | Stub |
 | `/firebase-setup` | Stub |
 | `/app-check` | Stub |
 | `/fastapi-setup` | Stub |
 | `/verify` | Stub |
-| `/complexity` | Stub (the sensor script already ships with `/setup-project`) |
-| `/flutter-sdk-check` | Stub |
-| `/pr-review` | Stub |
 
-See [CATALOG.md](CATALOG.md) for what each stub will do.
+See [CATALOG.md](CATALOG.md) for what each skill does.
 
 ## After `/setup-project`
 

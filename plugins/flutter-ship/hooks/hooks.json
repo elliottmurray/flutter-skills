@@ -1,4 +1,18 @@
 {
-  "description": "No hooks in v1. Complexity PostToolUse and lint-on-edit ship with /complexity later.",
-  "hooks": {}
+  "description": "Advisory complexity nudge after Dart/Python edits. Quiet when the project has no sensor.",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/complexity_sensor_hook.py\"",
+            "timeout": 20,
+            "statusMessage": "Checking cyclomatic complexity..."
+          }
+        ]
+      }
+    ]
+  }
 }
