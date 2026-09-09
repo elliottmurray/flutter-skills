@@ -1,0 +1,117 @@
+name: Flutter Unit Tests
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'lib/**'
+      - 'test/**'
+      - 'integration_test/**'
+      - 'ios/**'
+      - 'pubspec.yaml'
+      - 'pubspec.lock'
+      - 'analysis_options.yaml'
+      - '.github/workflows/flutter.yml'
+      - '.github/actions/classify-changes/**'
+      - 'scripts/ci_change_classifier.py'
+      - 'scripts/complexity_sensor.py'
+      - '.complexity-baseline.json'
+  workflow_call:
+    inputs:
+      force_all:
+        description: Skip change detection and run every Flutter unit-test job step
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  classify:
+    runs-on: ubuntu-latest
+    outputs:
+      flutter_lint: ${{ steps.classify.outputs.flutter_lint }}
+      flutter_unit: ${{ steps.classify.outputs.flutter_unit }}
+      flutter_complexity: ${{ steps.classify.outputs.flutter_complexity }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/classify-changes
+        id: classify
+        with:
+          force_all: ${{ inputs.force_all == true }}
+
+  build:
+    needs: classify
+    runs-on: ubuntu-latest
+    env:
+      RUN_LINT: ${{ needs.classify.outputs.flutter_lint }}
+      RUN_UNIT: ${{ needs.classify.outputs.flutter_unit }}
+      RUN_COMPLEXITY: ${{ needs.classify.outputs.flutter_complexity }}
+      RUN_SETUP: ${{ needs.classify.outputs.flutter_lint == 'true' || needs.classify.outputs.flutter_unit == 'true' || needs.classify.outputs.flutter_complexity == 'true' }}
+
+    steps:
+      - name: Skip expensive Flutter steps
+        if: env.RUN_SETUP != 'true'
+        run: echo "No Flutter lint/unit/complexity changes; skipping."
+
+      - name: Clone repository
+        if: env.RUN_SETUP == 'true'
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        if: env.RUN_SETUP == 'true'
+        id: flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '{{FLUTTER_VERSION}}'
+          cache: true
+
+      - name: Install dependencies (offline)
+        if: env.RUN_SETUP == 'true' && steps.flutter.outputs.PUB-CACHE-HIT == 'true'
+        run: flutter pub get --offline
+
+      - name: Install dependencies
+        if: env.RUN_SETUP == 'true' && steps.flutter.outputs.PUB-CACHE-HIT != 'true'
+        run: flutter pub get
+
+      - name: Lint
+        if: env.RUN_LINT == 'true'
+        run: flutter analyze
+
+      - name: Install dart_code_linter (isolated)
+        if: env.RUN_COMPLEXITY == 'true'
+        continue-on-error: true
+        run: dart pub global activate dart_code_linter
+
+      - name: Complexity gate (warn-only)
+        if: env.RUN_COMPLEXITY == 'true'
+        continue-on-error: true
+        env:
+          COMPLEXITY_DART_METRICS_CMD: "dart pub global run dart_code_linter:metrics"
+        run: |
+          echo "## Cyclomatic Complexity Gate (Dart)" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          python3 scripts/complexity_sensor.py --lang dart --check \
+            2>&1 | tee -a $GITHUB_STEP_SUMMARY
+          status=${PIPESTATUS[0]}
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          exit $status
+
+      - name: Test
+        if: env.RUN_UNIT == 'true'
+        run: flutter test --coverage
+
+      - name: Write coverage summary
+        if: env.RUN_UNIT == 'true'
+        continue-on-error: true
+        run: |
+          echo "## Flutter Coverage" >> $GITHUB_STEP_SUMMARY
+          if command -v lcov >/dev/null; then
+            lcov --summary coverage/lcov.info >> $GITHUB_STEP_SUMMARY 2>&1 || true
+          else
+            echo "lcov not installed; raw lcov.info uploaded with the job workspace." >> $GITHUB_STEP_SUMMARY
+          fi

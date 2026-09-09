@@ -1,0 +1,24 @@
+[project]
+name = "{{PACKAGE_NAME}}-api"
+version = "0.1.0"
+description = "{{APP_NAME}} FastAPI backend"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi",
+  "uvicorn[standard]",
+  "firebase-admin",
+]
+
+[dependency-groups]
+dev = [
+  "httpx",
+  "pytest",
+  "ruff",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

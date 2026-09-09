@@ -1,0 +1,103 @@
+name: Integration Tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'lib/**'
+      - 'test/**'
+      - 'integration_test/**'
+      - 'ios/**'
+      - 'pubspec.yaml'
+      - 'pubspec.lock'
+      - 'scripts/run_integration_tests.sh'
+      - '.github/workflows/integration_tests.yml'
+      - '.github/workflows/flutter.yml'
+      - '.github/actions/classify-changes/**'
+      - 'scripts/ci_change_classifier.py'
+  workflow_dispatch:
+
+jobs:
+  classify:
+    runs-on: ubuntu-latest
+    outputs:
+      flutter_lint: ${{ steps.classify.outputs.flutter_lint }}
+      flutter_unit: ${{ steps.classify.outputs.flutter_unit }}
+      flutter_complexity: ${{ steps.classify.outputs.flutter_complexity }}
+      flutter_integration: ${{ steps.classify.outputs.flutter_integration }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/classify-changes
+        id: classify
+        with:
+          force_all: ${{ github.event_name == 'workflow_dispatch' }}
+
+  unit-tests:
+    needs: classify
+    if: >
+      needs.classify.outputs.flutter_unit == 'true' ||
+      needs.classify.outputs.flutter_lint == 'true' ||
+      needs.classify.outputs.flutter_complexity == 'true'
+    permissions:
+      contents: read
+      pull-requests: write
+    uses: ./.github/workflows/flutter.yml
+    with:
+      force_all: ${{ github.event_name == 'workflow_dispatch' }}
+
+  integration-test:
+    needs: [classify, unit-tests]
+    if: needs.classify.outputs.flutter_integration == 'true'
+    # {{RUNNER_LABEL}} — default macos-latest. /self-hosted-runner swaps this
+    # to a label like [self-hosted, macOS, my-runner].
+    runs-on: {{RUNNER_LABEL}}
+    env:
+      HEADLESS_SIMULATOR: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Flutter
+        id: flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '{{FLUTTER_VERSION}}'
+          channel: stable
+          cache: false
+      - name: Disable Xcode indexing (CI build speed)
+        run: echo "COMPILER_INDEX_STORE_ENABLE = NO" >> ios/Flutter/Debug.xcconfig
+      - name: Run integration tests with screenshot capture
+        timeout-minutes: 30
+        env:
+          PUB_CACHE_HIT: ${{ steps.flutter.outputs.PUB-CACHE-HIT }}
+          GIT_CONFIG_COUNT: '2'
+          GIT_CONFIG_KEY_0: http.lowSpeedLimit
+          GIT_CONFIG_VALUE_0: '1000'
+          GIT_CONFIG_KEY_1: http.lowSpeedTime
+          GIT_CONFIG_VALUE_1: '45'
+        run: |
+          for attempt in 1 2; do
+            echo "::group::Integration test attempt $attempt of 2"
+            rc=0
+            ./scripts/run_integration_tests.sh || rc=$?
+            echo "::endgroup::"
+            if [ "$rc" -eq 0 ]; then
+              exit 0
+            fi
+            echo "::warning::Integration test attempt $attempt failed (exit $rc)"
+          done
+          echo "::error::Integration tests failed after 2 attempts"
+          exit 1
+      - name: Upload screenshots
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: screenshots
+          path: screenshots/
+      - name: Upload flutter drive log
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: flutter-drive-log
+          path: logs/flutter_drive.log
+          if-no-files-found: ignore

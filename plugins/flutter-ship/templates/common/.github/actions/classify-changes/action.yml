@@ -1,0 +1,105 @@
+name: Classify CI changes
+description: Map this event's changed files to which CI jobs should run
+
+inputs:
+  force_all:
+    description: Set every job flag true (manual dispatch / reusable caller)
+    required: false
+    default: 'false'
+
+outputs:
+  flutter_lint:
+    description: Run flutter analyze
+    value: ${{ steps.classify.outputs.flutter_lint }}
+  flutter_unit:
+    description: Run flutter test
+    value: ${{ steps.classify.outputs.flutter_unit }}
+  flutter_complexity:
+    description: Run the Dart complexity gate
+    value: ${{ steps.classify.outputs.flutter_complexity }}
+  flutter_integration:
+    description: Run iOS integration tests
+    value: ${{ steps.classify.outputs.flutter_integration }}
+  python_lint:
+    description: Run ruff
+    value: ${{ steps.classify.outputs.python_lint }}
+  python_unit:
+    description: Run pytest
+    value: ${{ steps.classify.outputs.python_unit }}
+  python_complexity:
+    description: Run the Python complexity gate
+    value: ${{ steps.classify.outputs.python_complexity }}
+
+runs:
+  using: composite
+  steps:
+    - name: Collect changed files
+      id: files
+      shell: bash
+      env:
+        EVENT_NAME: ${{ github.event_name }}
+        FORCE_ALL: ${{ inputs.force_all }}
+        BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        BEFORE_SHA: ${{ github.event.before }}
+        HEAD_SHA: ${{ github.sha }}
+      run: |
+        set -euo pipefail
+        LIST="${RUNNER_TEMP}/changed-files.txt"
+        : > "$LIST"
+        ZERO=0000000000000000000000000000000000000000
+        if [ "$FORCE_ALL" = "true" ] || [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+          echo "mode=all" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+        case "$EVENT_NAME" in
+          pull_request|pull_request_target)
+            git diff --name-only --diff-filter=ACDMR "${BASE_SHA}...${HEAD_SHA}" > "$LIST"
+            ;;
+          push)
+            if [ -z "${BEFORE_SHA}" ] || [ "${BEFORE_SHA}" = "$ZERO" ]; then
+              git diff --name-only --diff-filter=ACDMR "${HEAD_SHA}^" "${HEAD_SHA}" > "$LIST" \
+                || git ls-tree -r --name-only "$HEAD_SHA" > "$LIST"
+            else
+              git diff --name-only --diff-filter=ACDMR "${BEFORE_SHA}" "${HEAD_SHA}" > "$LIST"
+            fi
+            ;;
+          *)
+            git diff --name-only --diff-filter=ACDMR HEAD^ HEAD > "$LIST" || true
+            ;;
+        esac
+        echo "mode=diff" >> "$GITHUB_OUTPUT"
+
+    - name: Classify
+      id: classify
+      shell: bash
+      env:
+        PYTHONPATH: ${{ github.workspace }}/scripts
+        MODE: ${{ steps.files.outputs.mode }}
+      run: |
+        set -euo pipefail
+        OUT="${RUNNER_TEMP}/classify.out"
+        if [ "$MODE" = "all" ]; then
+          python3 scripts/ci_change_classifier.py --all --github-output "$OUT"
+        else
+          python3 scripts/ci_change_classifier.py --files-from "${RUNNER_TEMP}/changed-files.txt" --github-output "$OUT"
+        fi
+        cat "$OUT" >> "$GITHUB_OUTPUT"
+        {
+          echo "## CI change classifier"
+          echo ""
+          if [ "$MODE" = "diff" ] && [ -s "${RUNNER_TEMP}/changed-files.txt" ]; then
+            echo "<details><summary>Changed files</summary>"
+            echo ""
+            echo '```'
+            cat "${RUNNER_TEMP}/changed-files.txt"
+            echo '```'
+            echo "</details>"
+            echo ""
+          else
+            echo "Mode: \`$MODE\` (every job flag set)."
+            echo ""
+          fi
+          echo '```'
+          cat "$OUT"
+          echo '```'
+        } >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,13 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "flutter-skills",
+  "description": "Claude Code plugin for shipping Flutter iOS apps with CI, tests, feature flags, and quality gates",
+  "plugins": [
+    {
+      "name": "flutter-ship",
+      "description": "Bootstrap a Flutter iOS app with CI, integration-test harness, lint, complexity ratchet, and optional Firebase/FastAPI stubs",
+      "source": "./plugins/flutter-ship",
+      "category": "development"
+    }
+  ]
+}
