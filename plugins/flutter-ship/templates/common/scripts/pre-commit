@@ -1,0 +1,55 @@
+#!/bin/sh
+# Run checks when relevant files are staged. Uses ci_change_classifier.py so
+# local skips match CI: docs-only, lint-only, and complexity-only diffs do
+# not run unit tests.
+#
+# Install: cp scripts/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+FAILED=0
+
+CLASSIFY=$(git diff --cached --name-only | PYTHONPATH="${REPO_ROOT}/scripts" \
+  python3 "${REPO_ROOT}/scripts/ci_change_classifier.py" --files-from -) || exit 1
+eval "$(echo "$CLASSIFY" | sed 's/^/export /')"
+
+if [ "${flutter_lint}" = "true" ] || [ "${flutter_unit}" = "true" ]; then
+  echo "Flutter lint/unit flags set — running flutter checks..."
+  cd "${REPO_ROOT}" || exit 1
+
+  if [ "${flutter_lint}" = "true" ]; then
+    echo "--- flutter analyze ---"
+    env -u GIT_DIR -u GIT_WORK_TREE flutter analyze
+    [ $? -ne 0 ] && FAILED=1
+  fi
+
+  if [ "${flutter_unit}" = "true" ]; then
+    echo "--- flutter test ---"
+    env -u GIT_DIR -u GIT_WORK_TREE flutter test
+    [ $? -ne 0 ] && FAILED=1
+  fi
+fi
+
+if [ "${python_lint}" = "true" ] || [ "${python_unit}" = "true" ]; then
+  if [ -d "${REPO_ROOT}/backend" ]; then
+    echo "Python lint/unit flags set — running backend checks..."
+    cd "${REPO_ROOT}/backend" || exit 1
+
+    if [ "${python_lint}" = "true" ]; then
+      echo "--- ruff ---"
+      uv run ruff check .
+      [ $? -ne 0 ] && FAILED=1
+    fi
+
+    if [ "${python_unit}" = "true" ]; then
+      echo "--- pytest ---"
+      uv run pytest -q
+      [ $? -ne 0 ] && FAILED=1
+    fi
+  fi
+fi
+
+if [ $FAILED -ne 0 ]; then
+  echo ""
+  echo "Pre-commit check failed. Fix errors before committing."
+  exit 1
+fi

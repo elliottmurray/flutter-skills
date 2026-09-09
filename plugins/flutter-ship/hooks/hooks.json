@@ -1,0 +1,4 @@
+{
+  "description": "No hooks in v1. Complexity PostToolUse and lint-on-edit ship with /complexity later.",
+  "hooks": {}
+}

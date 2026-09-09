@@ -1,0 +1,85 @@
+name: Python CI
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/python-api.yml'
+      - 'scripts/complexity_sensor.py'
+      - '.complexity-baseline.json'
+  push:
+    branches: [ main ]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/python-api.yml'
+      - 'scripts/complexity_sensor.py'
+      - '.complexity-baseline.json'
+
+jobs:
+  classify:
+    runs-on: ubuntu-latest
+    outputs:
+      python_lint: ${{ steps.classify.outputs.python_lint }}
+      python_unit: ${{ steps.classify.outputs.python_unit }}
+      python_complexity: ${{ steps.classify.outputs.python_complexity }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/classify-changes
+        id: classify
+
+  python-api:
+    needs: classify
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      RUN_LINT: ${{ needs.classify.outputs.python_lint }}
+      RUN_UNIT: ${{ needs.classify.outputs.python_unit }}
+      RUN_COMPLEXITY: ${{ needs.classify.outputs.python_complexity }}
+      RUN_SETUP: ${{ needs.classify.outputs.python_lint == 'true' || needs.classify.outputs.python_unit == 'true' || needs.classify.outputs.python_complexity == 'true' }}
+
+    steps:
+      - name: Skip
+        if: env.RUN_SETUP != 'true'
+        working-directory: .
+        run: echo "No Python lint/unit/complexity changes; skipping."
+
+      - uses: actions/checkout@v4
+        if: env.RUN_SETUP == 'true'
+
+      - name: Set up uv
+        if: env.RUN_SETUP == 'true'
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install dependencies
+        if: env.RUN_SETUP == 'true'
+        run: uv sync --group dev
+
+      - name: Lint
+        if: env.RUN_LINT == 'true'
+        run: uv run ruff check .
+
+      - name: Test
+        if: env.RUN_UNIT == 'true'
+        run: uv run pytest -q
+
+      - name: Complexity gate (warn-only)
+        if: env.RUN_COMPLEXITY == 'true'
+        continue-on-error: true
+        working-directory: .
+        env:
+          COMPLEXITY_RADON_CMD: "uv run --directory backend radon"
+          COMPLEXITY_PYTHON_ROOT: backend
+        run: |
+          echo "## Cyclomatic Complexity Gate (Python)" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          uv run --directory backend --with radon \
+            python3 scripts/complexity_sensor.py --lang python --check \
+            2>&1 | tee -a $GITHUB_STEP_SUMMARY
+          status=${PIPESTATUS[0]}
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          exit $status

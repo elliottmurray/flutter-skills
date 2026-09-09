@@ -1,0 +1,28 @@
+include: package:flutter_lints/flutter.yaml
+
+linter:
+  rules:
+    prefer_single_quotes: true
+
+analyzer:
+  exclude:
+    - build/**
+    - android/**
+    - ios/**
+    - web/**
+    - windows/**
+    - macos/**
+    - linux/**
+
+# Cyclomatic-complexity sensor config, read by dart_code_linter. The tool is NOT a
+# project dependency (installed on demand via `dart pub global activate
+# dart_code_linter`). The repo-wide gate lives in scripts/complexity_sensor.py
+# against .complexity-baseline.json; these thresholds mirror its default.
+dart_code_linter:
+  metrics:
+    cyclomatic-complexity: 10
+    maximum-nesting-level: 5
+    number-of-parameters: 5
+  metrics-exclude:
+    - test/**
+    - integration_test/**
