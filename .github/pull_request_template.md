@@ -2,14 +2,24 @@
 
 <!-- What changed, and why. -->
 
-## Service(s) touched
+## Area(s) touched
 
-- [ ] Flutter app
-- [ ] Python backend
-- [ ] CI / docs / other
+- [ ] Skill (`SKILL.md`)
+- [ ] Template (copied by `/setup-project`)
+- [ ] CI
+- [ ] Docs (README, CATALOG)
+- [ ] Other
 
 ## Testing
 
-- [ ] `flutter test` / `flutter analyze`
-- [ ] `flutter drive` / integration (if UI flow)
-- [ ] Failing test written first (TDD), or N/A for trivial/generated code
+- [ ] `render.py` smoke test
+- [ ] Unit tests (`plugins/flutter-ship/scripts/test_render.py` or other)
+- [ ] N/A
+
+## Skill status
+
+<!-- If a skill changed. -->
+
+- [ ] Shipped
+- [ ] Still a stub
+- [ ] N/A (no skill change)
