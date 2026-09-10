@@ -40,8 +40,18 @@ class FlagDefinition {
 /// The single source of truth for every remotely-configurable flag.
 ///
 /// Remote Config defaults are derived from this list, so a flag cannot exist
-/// without an entry here.
+/// without an entry here. Use `/feature-flags` to add, graduate, or delete.
 const kFlagRegistry = <FlagDefinition>[];
+
+/// First registry entry with [key], or null.
+FlagDefinition? lookupFlag(String key) {
+  for (final flag in kFlagRegistry) {
+    if (flag.key == key) {
+      return flag;
+    }
+  }
+  return null;
+}
 
 /// Remote Config defaults, derived so they cannot diverge from the registry.
 Map<String, Object> get flagDefaults => {
