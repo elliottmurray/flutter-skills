@@ -49,5 +49,5 @@ Treat these as high risk until this list is edited for the app:
 - `/ios-ci-setup` — Apple certs, profiles, GitHub secrets
 - `/self-hosted-runner` — Mac mini LaunchAgent for integration tests
 - `/firebase-setup` / `/app-check` — if using Firebase
-- `/fastapi-setup` — if expanding the backend stub
+- `/fastapi-setup` — expand the FastAPI backend (uv, ruff, pytest, Docker)
 - `/verify` — drive the simulator from Claude

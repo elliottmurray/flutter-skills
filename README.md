@@ -36,7 +36,7 @@ Once this repo is on GitHub:
 | `/self-hosted-runner` | Stub |
 | `/firebase-setup` | Stub |
 | `/app-check` | Stub |
-| `/fastapi-setup` | Stub |
+| `/fastapi-setup` | Implemented — uv, ruff, pytest, Docker optional |
 | `/verify` | Stub |
 
 See [CATALOG.md](CATALOG.md) for what each skill does.

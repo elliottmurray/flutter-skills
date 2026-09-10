@@ -134,7 +134,7 @@ Skills when you need them:
   /self-hosted-runner    # Mac LaunchAgent, swap runs-on
   /firebase-setup        # console + Remote Config app_channel
   /app-check             # DeviceCheck / App Attest + backend flag
-  /fastapi-setup         # expand the backend stub
+  /fastapi-setup         # uv, ruff, pytest, optional Docker
   /verify                # drive the simulator from Claude
   /complexity            # ratchet cyclomatic complexity
   /flutter-sdk-check     # bump the pinned Flutter version
