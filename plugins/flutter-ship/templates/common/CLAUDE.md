@@ -27,6 +27,7 @@ CI builds a signed IPA on the Release workflow. Secrets are documented in
 ## Skills to run next
 
 - `/tdd` — already available
+- `/flutter-sdk-check` — bump the pinned Flutter version
 - `/ios-ci-setup` — Apple certs, profiles, GitHub secrets
 - `/self-hosted-runner` — Mac mini LaunchAgent for integration tests
 - `/firebase-setup` / `/app-check` — if using Firebase

@@ -36,7 +36,7 @@ Once this repo is on GitHub:
 | `/fastapi-setup` | Stub |
 | `/verify` | Stub |
 | `/complexity` | Stub (the sensor script already ships with `/setup-project`) |
-| `/flutter-sdk-check` | Stub |
+| `/flutter-sdk-check` | Implemented — bump pinned `flutter-version` |
 | `/pr-review` | Stub |
 
 See [CATALOG.md](CATALOG.md) for what each stub will do.
