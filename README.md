@@ -35,7 +35,7 @@ Once this repo is on GitHub:
 | `/app-check` | Stub |
 | `/fastapi-setup` | Stub |
 | `/verify` | Stub |
-| `/complexity` | Stub (the sensor script already ships with `/setup-project`) |
+| `/complexity` | Implemented — report, ratchet, hotspot pass |
 | `/flutter-sdk-check` | Stub |
 | `/pr-review` | Stub |
 

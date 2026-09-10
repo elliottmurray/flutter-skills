@@ -24,6 +24,12 @@ CI builds a signed IPA on the Release workflow. Secrets are documented in
 `/ios-ci-setup` (not shipped yet — see the flutter-ship catalog). Do not bake
 `--dart-define` into release builds; that defeats Remote Config kill switches.
 
+## Complexity
+
+`scripts/complexity_sensor.py` plus `.complexity-baseline.json`. Use
+`/complexity` for a report or a one-function ratchet. CI `--check` is
+warn-only. Never raise a ceiling to make the gate pass.
+
 ## Skills to run next
 
 - `/tdd` — already available
@@ -32,5 +38,5 @@ CI builds a signed IPA on the Release workflow. Secrets are documented in
 - `/firebase-setup` / `/app-check` — if using Firebase
 - `/fastapi-setup` — if expanding the backend stub
 - `/verify` — drive the simulator from Claude
-- `/complexity` — ratchet cyclomatic complexity
+- `/complexity` — report and ratchet cyclomatic complexity
 - `/pr-review` — review a PR against this repo's danger areas

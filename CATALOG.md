@@ -13,8 +13,8 @@ What each skill does and whether it ships in this version.
 | `/app-check` | Stub | DeviceCheck / App Attest, debug tokens, backend enforcement flag |
 | `/fastapi-setup` | Stub | Expand the stub: uv, ruff, pytest, Docker optional |
 | `/verify` | Stub | Generic VM Service driver (tap / eval / screenshot) |
-| `/complexity` | Stub | Report / ratchet / occasional hotspot pass. Script already copied by setup |
+| `/complexity` | **Shipped** | Report / ratchet / occasional hotspot pass. Sensor + PostToolUse hook |
 | `/flutter-sdk-check` | Stub | Bump pinned `flutter-version` across workflows |
 | `/pr-review` | Stub | Generic rubric + `@claude` workflow; project danger areas filled at setup |
 
-v1 hooks do not fire. Pre-commit is a **git** hook, installed by `/setup-project`.
+The complexity PostToolUse hook is advisory and stays quiet when the project has no sensor. Pre-commit is a **git** hook, installed by `/setup-project`.
