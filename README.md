@@ -32,7 +32,7 @@ Once this repo is on GitHub:
 | `/feature-flags` | Implemented — add / graduate / delete Remote Config flags |
 | `/flutter-sdk-check` | Implemented — bump pinned `flutter-version` |
 | `/pr-review` | Implemented — risk rubric; `@claude` workflow unchanged |
-| `/ios-ci-setup` | Stub |
+| `/ios-ci-setup` | Implemented — Apple certs, profiles, GitHub secrets |
 | `/self-hosted-runner` | Stub |
 | `/firebase-setup` | Stub |
 | `/app-check` | Stub |

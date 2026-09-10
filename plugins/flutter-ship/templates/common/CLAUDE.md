@@ -20,8 +20,8 @@ authoritative. Use `/feature-flags` to add, graduate, or delete a flag.
 
 ## iOS releases
 
-CI builds a signed IPA on the Release workflow. Secrets are documented in
-`/ios-ci-setup` (not shipped yet — see the flutter-ship catalog). Do not bake
+CI builds a signed IPA on the Release workflow. Use `/ios-ci-setup` for
+Apple certs, profiles, and GitHub secrets (`docs/ios-ci.md`). Do not bake
 `--dart-define` into release builds; that defeats Remote Config kill switches.
 
 ## Complexity
