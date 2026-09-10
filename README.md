@@ -37,7 +37,7 @@ Once this repo is on GitHub:
 | `/verify` | Stub |
 | `/complexity` | Stub (the sensor script already ships with `/setup-project`) |
 | `/flutter-sdk-check` | Stub |
-| `/pr-review` | Stub |
+| `/pr-review` | Implemented — risk rubric; `@claude` workflow unchanged |
 
 See [CATALOG.md](CATALOG.md) for what each stub will do.
 

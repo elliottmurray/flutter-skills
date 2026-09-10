@@ -15,6 +15,6 @@ What each skill does and whether it ships in this version.
 | `/verify` | Stub | Generic VM Service driver (tap / eval / screenshot) |
 | `/complexity` | Stub | Report / ratchet / occasional hotspot pass. Script already copied by setup |
 | `/flutter-sdk-check` | Stub | Bump pinned `flutter-version` across workflows |
-| `/pr-review` | Stub | Generic rubric + `@claude` workflow; project danger areas filled at setup |
+| `/pr-review` | **Shipped** | Generic rubric + keep `claude.yml`; danger areas from the app `CLAUDE.md` |
 
 v1 hooks do not fire. Pre-commit is a **git** hook, installed by `/setup-project`.

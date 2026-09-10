@@ -24,6 +24,15 @@ CI builds a signed IPA on the Release workflow. Secrets are documented in
 `/ios-ci-setup` (not shipped yet — see the flutter-ship catalog). Do not bake
 `--dart-define` into release builds; that defeats Remote Config kill switches.
 
+## Danger areas (for /pr-review)
+
+Treat these as high risk until this list is edited for the app:
+
+- `.github/workflows/**`, git hooks, Claude hooks
+- Signing secrets, App Check, credential handling
+- Feature-flag defaults that would ship a gated feature to the App Store
+- FastAPI request/response shape changes without a matching client update
+
 ## Skills to run next
 
 - `/tdd` — already available
@@ -33,4 +42,4 @@ CI builds a signed IPA on the Release workflow. Secrets are documented in
 - `/fastapi-setup` — if expanding the backend stub
 - `/verify` — drive the simulator from Claude
 - `/complexity` — ratchet cyclomatic complexity
-- `/pr-review` — review a PR against this repo's danger areas
+- `/pr-review` — review a PR against the danger areas above
