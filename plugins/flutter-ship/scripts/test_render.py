@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from render import copy_tree, package_name, render_text
+from render import copy_tree, package_name, render_text, main as render_main
 
 
 class PackageNameTest(unittest.TestCase):
@@ -44,6 +44,25 @@ class RenderTest(unittest.TestCase):
                 (dest / "test" / "config" / "app_channel_test.dart").read_text(),
                 "import 'package:demo_app/config/app_channel.dart';\n",
             )
+
+    def test_render_copies_sim_driver(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            dest = Path(tmp) / "app"
+            dest.mkdir()
+            rc = render_main(
+                [
+                    "--dest",
+                    str(dest),
+                    "--app-name",
+                    "Demo",
+                    "--bundle-id",
+                    "com.example.demo",
+                ]
+            )
+            self.assertEqual(rc, 0)
+            driver = dest / "scripts" / "sim_driver.py"
+            self.assertTrue(driver.is_file(), "sim_driver.py should be copied into the app")
+            self.assertIn("tap", driver.read_text())
 
 
 if __name__ == "__main__":

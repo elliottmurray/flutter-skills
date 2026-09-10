@@ -1,6 +1,6 @@
 {
   "name": "flutter-ship",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Bootstrap Flutter iOS apps with CI, TDD, lint, complexity gates, and an integration-test harness",
   "license": "MIT",
   "keywords": ["flutter", "ios", "ci", "tdd", "feature-flags", "fastapi"]

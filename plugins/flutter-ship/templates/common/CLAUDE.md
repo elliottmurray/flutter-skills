@@ -50,4 +50,4 @@ Treat these as high risk until this list is edited for the app:
 - `/self-hosted-runner` — Mac mini LaunchAgent for integration tests
 - `/firebase-setup` / `/app-check` — if using Firebase
 - `/fastapi-setup` — if expanding the backend stub
-- `/verify` — drive the simulator from Claude
+- `/verify` — drive the simulator (`scripts/sim_driver.py`)
