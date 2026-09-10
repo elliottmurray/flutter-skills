@@ -34,7 +34,7 @@ Once this repo is on GitHub:
 | `/pr-review` | Implemented — risk rubric; `@claude` workflow unchanged |
 | `/ios-ci-setup` | Stub |
 | `/self-hosted-runner` | Stub |
-| `/firebase-setup` | Stub |
+| `/firebase-setup` | Implemented — console project, iOS app, RC `app_channel` |
 | `/app-check` | Stub |
 | `/fastapi-setup` | Stub |
 | `/verify` | Stub |
