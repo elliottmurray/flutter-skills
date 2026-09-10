@@ -16,7 +16,7 @@ TDD is the default: use `/tdd`. Write a failing test first, then implement.
 
 If this project uses Firebase Remote Config, read [docs/feature-flags.md](docs/feature-flags.md)
 before adding a flag. The registry in `lib/config/flag_registry.dart` is
-authoritative. Use `/feature-flags` once that skill ships.
+authoritative. Use `/feature-flags` to add, graduate, or delete a flag.
 
 ## iOS releases
 
@@ -27,6 +27,7 @@ CI builds a signed IPA on the Release workflow. Secrets are documented in
 ## Skills to run next
 
 - `/tdd` — already available
+- `/feature-flags` — add / graduate / delete Remote Config flags
 - `/ios-ci-setup` — Apple certs, profiles, GitHub secrets
 - `/self-hosted-runner` — Mac mini LaunchAgent for integration tests
 - `/firebase-setup` / `/app-check` — if using Firebase

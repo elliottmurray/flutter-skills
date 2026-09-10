@@ -6,7 +6,7 @@ What each skill does and whether it ships in this version.
 |---|---|---|
 | `/setup-project` | **Shipped** | Interview, `flutter create`, render templates, install git hook |
 | `/tdd` | **Shipped** | Red-green-refactor for Flutter |
-| `/feature-flags` | Stub | Add / graduate / delete registry flags; TestFlight `app_channel` condition |
+| `/feature-flags` | **Shipped** | Add / graduate / delete registry flags; TestFlight `app_channel` condition |
 | `/ios-ci-setup` | Stub | Wizard + Chrome on developer.apple.com after 2FA; confirm before `gh secret set`. Cert private key still needs Xcode/Keychain |
 | `/self-hosted-runner` | Stub | Walk a local Mac: `config.sh`, LaunchAgent (not `svc.sh`), `pmset`, swap `runs-on` |
 | `/firebase-setup` | Stub | Checklist / Chrome: project, iOS app, RC `app_channel` condition |

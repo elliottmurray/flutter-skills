@@ -28,7 +28,7 @@ Once this repo is on GitHub:
 |---|---|
 | `/setup-project` | Implemented — interview, `flutter create`, templates, pre-commit |
 | `/tdd` | Implemented — Flutter red-green-refactor |
-| `/feature-flags` | Stub |
+| `/feature-flags` | Implemented — add / graduate / delete Remote Config flags |
 | `/ios-ci-setup` | Stub |
 | `/self-hosted-runner` | Stub |
 | `/firebase-setup` | Stub |

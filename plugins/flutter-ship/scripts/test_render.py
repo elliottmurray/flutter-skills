@@ -30,6 +30,21 @@ class RenderTest(unittest.TestCase):
             self.assertEqual(written, ["hello.txt"])
             self.assertEqual((dest / "hello.txt").read_text(), "Demo\n")
 
+    def test_nested_package_placeholder(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            src = Path(tmp) / "src"
+            dest = Path(tmp) / "dest"
+            nested = src / "test" / "config"
+            nested.mkdir(parents=True)
+            (nested / "app_channel_test.dart").write_text(
+                "import 'package:{{PACKAGE_NAME}}/config/app_channel.dart';\n"
+            )
+            copy_tree(src, dest, {"PACKAGE_NAME": "demo_app"}, force=True)
+            self.assertEqual(
+                (dest / "test" / "config" / "app_channel_test.dart").read_text(),
+                "import 'package:demo_app/config/app_channel.dart';\n",
+            )
+
 
 if __name__ == "__main__":
     unittest.main()
