@@ -35,7 +35,7 @@ Once this repo is on GitHub:
 | `/ios-ci-setup` | Stub |
 | `/self-hosted-runner` | Stub |
 | `/firebase-setup` | Stub |
-| `/app-check` | Stub |
+| `/app-check` | Implemented — DeviceCheck / App Attest, debug tokens |
 | `/fastapi-setup` | Stub |
 | `/verify` | Stub |
 
