@@ -37,8 +37,10 @@ thing you would be killing in production.
 
 ## Channels
 
-Resolve the channel at runtime from the installer store (`package_info_plus`).
-Unknown resolves to `appStore` on purpose.
+Resolve the channel at runtime with
+[`lib/config/app_channel.dart`](../lib/config/app_channel.dart) from the
+installer store (`package_info_plus`). Unknown resolves to `appStore` on
+purpose.
 
 | Installer store | Channel |
 |-----------------|---------|
