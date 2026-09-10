@@ -99,6 +99,15 @@ def main(argv: list[str] | None = None) -> int:
     if args.fastapi:
         written += copy_tree(TEMPLATES / "fastapi", dest, mapping, force=args.force)
 
+    extra = PLUGIN_ROOT / "scripts" / "sim_driver.py"
+    if extra.is_file():
+        target = dest / "scripts" / "sim_driver.py"
+        if args.force or not target.exists():
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(extra, target)
+            target.chmod(target.stat().st_mode | 0o111)
+            written.append("scripts/sim_driver.py")
+
     hook_src = dest / "scripts" / "pre-commit"
     git_dir = dest / ".git"
     if hook_src.is_file() and git_dir.is_dir():

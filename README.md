@@ -32,12 +32,12 @@ Once this repo is on GitHub:
 | `/feature-flags` | Implemented — add / graduate / delete Remote Config flags |
 | `/flutter-sdk-check` | Implemented — bump pinned `flutter-version` |
 | `/pr-review` | Implemented — risk rubric; `@claude` workflow unchanged |
-| `/ios-ci-setup` | Stub |
-| `/self-hosted-runner` | Stub |
-| `/firebase-setup` | Stub |
-| `/app-check` | Stub |
-| `/fastapi-setup` | Stub |
-| `/verify` | Stub |
+| `/ios-ci-setup` | Implemented — Apple certs, profiles, GitHub secrets |
+| `/self-hosted-runner` | Implemented — LaunchAgent runner, swap `runs-on` |
+| `/firebase-setup` | Implemented — console project, iOS app, RC `app_channel` |
+| `/app-check` | Implemented — DeviceCheck / App Attest, debug tokens |
+| `/fastapi-setup` | Implemented — uv, ruff, pytest, Docker optional |
+| `/verify` | Implemented — generic VM Service tap / eval / screenshot |
 
 See [CATALOG.md](CATALOG.md) for what each skill does.
 
