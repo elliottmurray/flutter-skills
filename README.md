@@ -37,7 +37,7 @@ Once this repo is on GitHub:
 | `/firebase-setup` | Stub |
 | `/app-check` | Stub |
 | `/fastapi-setup` | Stub |
-| `/verify` | Stub |
+| `/verify` | Implemented — generic VM Service tap / eval / screenshot |
 
 See [CATALOG.md](CATALOG.md) for what each skill does.
 
