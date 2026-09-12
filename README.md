@@ -33,7 +33,7 @@ Once this repo is on GitHub:
 | `/flutter-sdk-check` | Implemented — bump pinned `flutter-version` |
 | `/pr-review` | Implemented — risk rubric; `@claude` workflow unchanged |
 | `/ios-ci-setup` | Stub |
-| `/self-hosted-runner` | Stub |
+| `/self-hosted-runner` | Implemented — LaunchAgent runner, swap `runs-on` |
 | `/firebase-setup` | Stub |
 | `/app-check` | Stub |
 | `/fastapi-setup` | Stub |
