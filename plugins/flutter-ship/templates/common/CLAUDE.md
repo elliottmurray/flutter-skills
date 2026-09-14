@@ -47,7 +47,7 @@ Treat these as high risk until this list is edited for the app:
 - `/flutter-sdk-check` — bump the pinned Flutter version
 - `/pr-review` — review a PR against the danger areas above
 - `/ios-ci-setup` — Apple certs, profiles, GitHub secrets
-- `/self-hosted-runner` — Mac mini LaunchAgent for integration tests
+- `/self-hosted-runner` — Mac LaunchAgent for integration tests (`docs/self-hosted-runner.md`)
 - `/firebase-setup` / `/app-check` — if using Firebase
-- `/fastapi-setup` — if expanding the backend stub
-- `/verify` — drive the simulator from Claude
+- `/fastapi-setup` — expand the FastAPI backend (uv, ruff, pytest, Docker)
+- `/verify` — drive the simulator (`scripts/sim_driver.py`)
