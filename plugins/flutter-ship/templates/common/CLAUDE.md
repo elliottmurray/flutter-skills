@@ -16,13 +16,19 @@ TDD is the default: use `/tdd`. Write a failing test first, then implement.
 
 If this project uses Firebase Remote Config, read [docs/feature-flags.md](docs/feature-flags.md)
 before adding a flag. The registry in `lib/config/flag_registry.dart` is
-authoritative. Use `/feature-flags` once that skill ships.
+authoritative. Use `/feature-flags` to add, graduate, or delete a flag.
 
 ## iOS releases
 
 CI builds a signed IPA on the Release workflow. Secrets are documented in
 `/ios-ci-setup` (not shipped yet — see the flutter-ship catalog). Do not bake
 `--dart-define` into release builds; that defeats Remote Config kill switches.
+
+## Complexity
+
+`scripts/complexity_sensor.py` plus `.complexity-baseline.json`. Use
+`/complexity` for a report or a one-function ratchet. CI `--check` is
+warn-only. Never raise a ceiling to make the gate pass.
 
 ## Danger areas (for /pr-review)
 
@@ -36,10 +42,12 @@ Treat these as high risk until this list is edited for the app:
 ## Skills to run next
 
 - `/tdd` — already available
+- `/feature-flags` — add / graduate / delete Remote Config flags
+- `/complexity` — report and ratchet cyclomatic complexity
+- `/flutter-sdk-check` — bump the pinned Flutter version
+- `/pr-review` — review a PR against the danger areas above
 - `/ios-ci-setup` — Apple certs, profiles, GitHub secrets
 - `/self-hosted-runner` — Mac mini LaunchAgent for integration tests
 - `/firebase-setup` / `/app-check` — if using Firebase
 - `/fastapi-setup` — if expanding the backend stub
-- `/verify` — drive the simulator from Claude
-- `/complexity` — ratchet cyclomatic complexity
-- `/pr-review` — review a PR against the danger areas above
+- `/verify` — drive the simulator (`scripts/sim_driver.py`)

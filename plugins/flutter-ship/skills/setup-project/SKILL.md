@@ -102,7 +102,8 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/render.py" ... --force
 Make the integration script executable:
 
 ```bash
-chmod +x scripts/pre-commit scripts/run_integration_tests.sh scripts/complexity_sensor.py
+chmod +x scripts/pre-commit scripts/run_integration_tests.sh \
+  scripts/complexity_sensor.py scripts/sim_driver.py
 ```
 
 ## 5. iOS bundle id
