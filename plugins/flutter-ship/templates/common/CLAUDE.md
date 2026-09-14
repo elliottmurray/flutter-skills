@@ -20,8 +20,8 @@ authoritative. Use `/feature-flags` to add, graduate, or delete a flag.
 
 ## iOS releases
 
-CI builds a signed IPA on the Release workflow. Secrets are documented in
-`/ios-ci-setup` (not shipped yet — see the flutter-ship catalog). Do not bake
+CI builds a signed IPA on the Release workflow. Use `/ios-ci-setup` for
+Apple certs, profiles, and GitHub secrets (`docs/ios-ci.md`). Do not bake
 `--dart-define` into release builds; that defeats Remote Config kill switches.
 
 ## Complexity
@@ -47,7 +47,7 @@ Treat these as high risk until this list is edited for the app:
 - `/flutter-sdk-check` — bump the pinned Flutter version
 - `/pr-review` — review a PR against the danger areas above
 - `/ios-ci-setup` — Apple certs, profiles, GitHub secrets
-- `/self-hosted-runner` — Mac mini LaunchAgent for integration tests
+- `/self-hosted-runner` — Mac LaunchAgent for integration tests (`docs/self-hosted-runner.md`)
 - `/firebase-setup` / `/app-check` — if using Firebase
-- `/fastapi-setup` — if expanding the backend stub
+- `/fastapi-setup` — expand the FastAPI backend (uv, ruff, pytest, Docker)
 - `/verify` — drive the simulator (`scripts/sim_driver.py`)
