@@ -102,7 +102,8 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/render.py" ... --force
 Make the integration script executable:
 
 ```bash
-chmod +x scripts/pre-commit scripts/run_integration_tests.sh scripts/complexity_sensor.py
+chmod +x scripts/pre-commit scripts/run_integration_tests.sh \
+  scripts/complexity_sensor.py scripts/sim_driver.py
 ```
 
 ## 5. iOS bundle id
@@ -134,7 +135,7 @@ Skills when you need them:
   /self-hosted-runner    # Mac LaunchAgent, swap runs-on
   /firebase-setup        # console + Remote Config app_channel
   /app-check             # DeviceCheck / App Attest + backend flag
-  /fastapi-setup         # expand the backend stub
+  /fastapi-setup         # uv, ruff, pytest, optional Docker
   /verify                # drive the simulator from Claude
   /complexity            # ratchet cyclomatic complexity
   /flutter-sdk-check     # bump the pinned Flutter version

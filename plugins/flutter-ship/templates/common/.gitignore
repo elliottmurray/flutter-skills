@@ -9,6 +9,7 @@ build/
 # Integration test output
 screenshots/
 logs/
+.sim_driver_state.json
 
 # OS / IDE
 .DS_Store
