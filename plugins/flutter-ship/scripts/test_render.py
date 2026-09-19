@@ -104,6 +104,5 @@ class RenderTest(unittest.TestCase):
             registry = (dest / "lib" / "config" / "flag_registry.dart").read_text()
             self.assertIn("DISABLE_FIREBASE_APP_CHECK", registry)
 
-
 if __name__ == "__main__":
     unittest.main()
