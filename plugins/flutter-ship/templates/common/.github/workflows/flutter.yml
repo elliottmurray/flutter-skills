@@ -3,19 +3,15 @@ name: Flutter Unit Tests
 on:
   pull_request:
     branches: [ main ]
-    paths:
-      - 'lib/**'
-      - 'test/**'
-      - 'integration_test/**'
-      - 'ios/**'
-      - 'pubspec.yaml'
-      - 'pubspec.lock'
-      - 'analysis_options.yaml'
-      - '.github/workflows/flutter.yml'
-      - '.github/actions/classify-changes/**'
-      - 'scripts/ci_change_classifier.py'
-      - 'scripts/complexity_sensor.py'
-      - '.complexity-baseline.json'
+    # No path allowlist: it would duplicate the classifier's idea of where
+    # code lives and silently stop firing if the app ever moves. The cheap
+    # `classify` job is the real gate; expensive steps sit behind its flags.
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - 'specs/**'
+      - '.claude/**'
+      - 'LICENSE'
   workflow_call:
     inputs:
       force_all:
@@ -34,6 +30,7 @@ jobs:
       flutter_lint: ${{ steps.classify.outputs.flutter_lint }}
       flutter_unit: ${{ steps.classify.outputs.flutter_unit }}
       flutter_complexity: ${{ steps.classify.outputs.flutter_complexity }}
+      dart_dir: ${{ steps.classify.outputs.dart_dir }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -72,14 +69,17 @@ jobs:
 
       - name: Install dependencies (offline)
         if: env.RUN_SETUP == 'true' && steps.flutter.outputs.PUB-CACHE-HIT == 'true'
+        working-directory: ${{ needs.classify.outputs.dart_dir }}
         run: flutter pub get --offline
 
       - name: Install dependencies
         if: env.RUN_SETUP == 'true' && steps.flutter.outputs.PUB-CACHE-HIT != 'true'
+        working-directory: ${{ needs.classify.outputs.dart_dir }}
         run: flutter pub get
 
       - name: Lint
         if: env.RUN_LINT == 'true'
+        working-directory: ${{ needs.classify.outputs.dart_dir }}
         run: flutter analyze
 
       - name: Install dart_code_linter (isolated)
@@ -103,6 +103,7 @@ jobs:
 
       - name: Test
         if: env.RUN_UNIT == 'true'
+        working-directory: ${{ needs.classify.outputs.dart_dir }}
         run: flutter test --coverage
 
       - name: Write coverage summary
@@ -111,7 +112,8 @@ jobs:
         run: |
           echo "## Flutter Coverage" >> $GITHUB_STEP_SUMMARY
           if command -v lcov >/dev/null; then
-            lcov --summary coverage/lcov.info >> $GITHUB_STEP_SUMMARY 2>&1 || true
+            lcov --summary "${{ needs.classify.outputs.dart_dir }}/coverage/lcov.info" \
+              >> $GITHUB_STEP_SUMMARY 2>&1 || true
           else
             echo "lcov not installed; raw lcov.info uploaded with the job workspace." >> $GITHUB_STEP_SUMMARY
           fi

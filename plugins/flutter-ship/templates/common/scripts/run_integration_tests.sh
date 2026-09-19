@@ -2,6 +2,9 @@
 # Run iOS integration tests on a Simulator (never a physical device).
 # Mirrors .github/workflows/integration_tests.yml
 #
+# The Flutter package location comes from scripts/project_layout.py; screenshots
+# and logs stay at the repo root so CI artifact paths do not move with the app.
+#
 # Usage (from anywhere):
 #   ./scripts/run_integration_tests.sh
 #   ./scripts/run_integration_tests.sh integration_test/my_flow_test.dart
@@ -47,7 +50,16 @@ for arg in "$@"; do
 done
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR/.."
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+DART_DIR="$(python3 "$SCRIPT_DIR/project_layout.py" --dart-dir)"
+APP_DIR="$REPO_ROOT"
+[[ "$DART_DIR" == "." ]] || APP_DIR="$REPO_ROOT/$DART_DIR"
+
+SCREENSHOT_DIR="$REPO_ROOT/screenshots"
+LOG_DIR="$REPO_ROOT/logs"
+
+cd "$APP_DIR"
 
 SIMULATOR_UDID="${SIMULATOR_UDID:-}"
 CREATED_SIMULATOR=false
@@ -115,7 +127,7 @@ stage_start "Enabling Swift Package Manager"
 flutter config --enable-swift-package-manager
 stage_end "Enabling Swift Package Manager"
 
-mkdir -p screenshots logs
+mkdir -p "$SCREENSHOT_DIR" "$LOG_DIR"
 
 prepare_simulator() {
   local udid
@@ -151,7 +163,7 @@ SIM_CREATED_FILE="$(mktemp)"
 
 stage_start "Preparing simulator + flutter pub get (parallel)"
 
-prepare_simulator > logs/sim_prepare.log 2>&1 &
+prepare_simulator > "$LOG_DIR/sim_prepare.log" 2>&1 &
 SIM_PID=$!
 
 set +e
@@ -167,7 +179,7 @@ SIM_EXIT_CODE=$?
 set -e
 
 stage_end "Preparing simulator + flutter pub get (parallel)"
-cat logs/sim_prepare.log
+cat "$LOG_DIR/sim_prepare.log"
 
 if [[ "$SIM_EXIT_CODE" -eq 0 ]]; then
   SIMULATOR_UDID="$(cat "$SIM_UDID_FILE")"
@@ -190,7 +202,7 @@ DRIVE_VERBOSE="${DRIVE_VERBOSE:-0}"
 DRIVE_ARGS=(
   --driver=test_driver/integration_test.dart
   --target="$TEST_TARGET"
-  --screenshot=screenshots/
+  --screenshot="$SCREENSHOT_DIR/"
   -d "$SIMULATOR_UDID"
 )
 if [[ "$DRIVE_VERBOSE" == "1" ]]; then
@@ -199,14 +211,14 @@ fi
 
 stage_start "flutter drive (integration test)"
 set +e
-flutter drive "${DRIVE_ARGS[@]}" 2>&1 | tee logs/flutter_drive.log
+flutter drive "${DRIVE_ARGS[@]}" 2>&1 | tee "$LOG_DIR/flutter_drive.log"
 DRIVE_EXIT_CODE=${PIPESTATUS[0]}
 set -e
 stage_end "flutter drive (integration test)"
 
 if [[ "$DRIVE_EXIT_CODE" -ne 0 ]]; then
-  log "flutter drive failed (exit $DRIVE_EXIT_CODE). Full log: logs/flutter_drive.log"
+  log "flutter drive failed (exit $DRIVE_EXIT_CODE). Full log: $LOG_DIR/flutter_drive.log"
   exit "$DRIVE_EXIT_CODE"
 fi
 
-log "Integration tests passed. Screenshots: screenshots/"
+log "Integration tests passed. Screenshots: $SCREENSHOT_DIR"

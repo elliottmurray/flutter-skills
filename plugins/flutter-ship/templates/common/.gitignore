@@ -16,9 +16,9 @@ logs/
 .idea/
 .vscode/
 
-# Python backend
-backend/.venv/
-backend/__pycache__/
-backend/.pytest_cache/
-backend/.ruff_cache/
-backend/.env
+# Python backend (path-independent: survives moving or renaming the package)
+**/.venv/
+**/__pycache__/
+**/.pytest_cache/
+**/.ruff_cache/
+**/.env

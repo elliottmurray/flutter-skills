@@ -10,11 +10,9 @@ Standard library only. Measurement tools are subprocesses:
   * dart  — defaults to `dart run dart_code_linter:metrics`;
             override COMPLEXITY_DART_METRICS_CMD
 
-Layout (overridable):
-
-  * Dart packages: COMPLEXITY_DART_PACKAGES (space-separated, default ".")
-  * Python root:   COMPLEXITY_PYTHON_ROOT (default "backend")
-  * Python targets: COMPLEXITY_PYTHON_TARGETS (space-separated, default ".")
+Layout comes from `project_layout.py` (see there for how to override it);
+COMPLEXITY_PYTHON_TARGETS (space-separated, default ".") still narrows what
+radon scans inside the Python package.
 
 Usage:
   complexity_sensor.py --report
@@ -33,18 +31,15 @@ import subprocess
 import sys
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
+import project_layout as layout
+
+REPO_ROOT = layout.REPO_ROOT
 BASELINE_PATH = REPO_ROOT / ".complexity-baseline.json"
 DEFAULT_THRESHOLD = 10
 
 
-def _dart_packages() -> list[str]:
-    raw = os.environ.get("COMPLEXITY_DART_PACKAGES", ".")
-    return [p for p in raw.split() if p]
-
-
 def _python_root() -> Path:
-    return REPO_ROOT / os.environ.get("COMPLEXITY_PYTHON_ROOT", "backend")
+    return REPO_ROOT / layout.python_dir()
 
 
 def _python_targets() -> list[str]:
@@ -225,7 +220,7 @@ def collect_python(targets=None) -> list[dict]:
 
 def collect_dart(packages=None) -> list[dict]:
     records: list[dict] = []
-    for pkg in packages or _dart_packages():
+    for pkg in packages or layout.dart_packages():
         pkg_dir = REPO_ROOT / pkg if pkg != "." else REPO_ROOT
         if not (pkg_dir / "lib").is_dir():
             continue
@@ -331,7 +326,7 @@ def main(argv=None) -> int:
         if args.lang != "all":
             scanned_langs = {r["lang"] for r in records} or {args.lang}
             for key, val in baseline.get("entries", {}).items():
-                lang = "python" if key.startswith("backend/") or key.endswith(".py") else "dart"
+                lang = layout.lang_for_path(key.split("::", 1)[0])
                 if lang not in scanned_langs and lang != args.lang:
                     new["entries"].setdefault(key, val)
         save_baseline(new)

@@ -106,6 +106,18 @@ chmod +x scripts/pre-commit scripts/run_integration_tests.sh \
   scripts/complexity_sensor.py scripts/sim_driver.py
 ```
 
+## 4b. Layout
+
+The rendered project puts the Flutter app at the repo root and the FastAPI
+service in `backend/`. `scripts/project_layout.py` is the single source of
+truth for both, and the classifier, complexity sensor, pre-commit hook,
+integration runner and workflows all read it.
+
+If they ask for a nested app (`app/` + `api/`), do not hand-edit the tooling:
+write `.flutter-ship.json` at the repo root and `git mv` to match. See
+`docs/project-layout.md` in the rendered project. `release.yml` still
+hardcodes `ios/` and `build/` — update it in the same commit.
+
 ## 5. iOS bundle id
 
 If `flutter create` used `--org` correctly, skip. Otherwise set
@@ -153,4 +165,5 @@ still has to register the machine — this skill only set `runs-on`.
 - Copy app-specific agents or one-off guards from another project
 - Bake `--dart-define` into `release.yml`
 - Run `flutter create` on top of an existing app
+- Hardcode `lib/` or `backend/` in tooling — use `scripts/project_layout.py`
 - Skip the interview

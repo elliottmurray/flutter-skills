@@ -5,6 +5,9 @@ Stdlib only. Fail closed: an unrecognised path under a service tree runs that
 service's full suite; an unrecognised path under `.github/` runs every job.
 Documentation and agent-skill files run nothing.
 
+Where the service trees live comes from `project_layout.py` — this module has
+no opinion on whether the Flutter app sits at the repo root or under `app/`.
+
 Usage:
   ci_change_classifier.py --all --github-output "$GITHUB_OUTPUT"
   ci_change_classifier.py --files-from <path|-> --github-output "$GITHUB_OUTPUT"
@@ -14,9 +17,12 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import functools
 import sys
 from collections.abc import Iterable
 from pathlib import PurePosixPath
+
+import project_layout as layout
 
 FLAG_NAMES: tuple[str, ...] = (
     "flutter_lint",
@@ -48,22 +54,14 @@ _DOC_FILENAMES = {
     "licence",
 }
 
-_PREFIX_RULES: tuple[tuple[str, frozenset[str]], ...] = (
-    ("test", FLUTTER_LINT_UNIT),
-    ("integration_test", FLUTTER_FULL),
-    ("lib", FLUTTER_FULL),
-    ("ios", FLUTTER_FULL),
-    ("android", FLUTTER_FULL),
-    ("backend/tests", PYTHON_LINT_UNIT),
-    ("backend", PYTHON_FULL),
-    (".github", ALL_FLAGS),
-)
-
-_EXACT_RULES: dict[str, frozenset[str]] = {
+# Layout-independent: `scripts/` and `.github/` stay at the repo root.
+_SHARED_EXACT_RULES: dict[str, frozenset[str]] = {
     "scripts/ci_change_classifier.py": ALL_FLAGS,
+    "scripts/project_layout.py": ALL_FLAGS,
     "scripts/complexity_sensor.py": COMPLEXITY_ONLY,
     "scripts/compute_release_tag.py": COMPLEXITY_ONLY,
     "scripts/ci_integration_green.py": COMPLEXITY_ONLY,
+    ".flutter-ship.json": ALL_FLAGS,
     ".complexity-baseline.json": COMPLEXITY_ONLY,
     ".github/workflows/flutter.yml": frozenset(
         {"flutter_lint", "flutter_unit", "flutter_complexity"}
@@ -71,10 +69,40 @@ _EXACT_RULES: dict[str, frozenset[str]] = {
     ".github/workflows/python-api.yml": PYTHON_FULL,
     ".github/workflows/integration_tests.yml": FLUTTER_FULL,
     "scripts/run_integration_tests.sh": FLUTTER_FULL,
-    "analysis_options.yaml": frozenset({"flutter_lint"}),
-    "pubspec.yaml": FLUTTER_FULL,
-    "pubspec.lock": FLUTTER_FULL,
 }
+
+
+@functools.lru_cache(maxsize=1)
+def _prefix_rules() -> tuple[tuple[str, frozenset[str]], ...]:
+    """Longest-match-first prefix table, built from the project layout.
+
+    Order matters: `backend/tests` has to be tested before `backend`, and a
+    Dart package rooted at `.` has to come after every narrower rule.
+    """
+    rules: list[tuple[str, frozenset[str]]] = []
+    for pkg in layout.dart_packages():
+        rules.append((layout.join(pkg, layout.DART_TEST_DIR), FLUTTER_LINT_UNIT))
+        rules.append((layout.join(pkg, layout.DART_INTEGRATION_DIR), FLUTTER_FULL))
+        for source_dir in layout.DART_SOURCE_DIRS:
+            rules.append((layout.join(pkg, source_dir), FLUTTER_FULL))
+    for pkg in layout.python_packages():
+        rules.append((layout.join(pkg, layout.PYTHON_TEST_DIR), PYTHON_LINT_UNIT))
+        rules.append((pkg, PYTHON_FULL))
+    rules.append((".github", ALL_FLAGS))
+    rules.sort(key=lambda rule: len(rule[0]), reverse=True)
+    return tuple(rules)
+
+
+@functools.lru_cache(maxsize=1)
+def _exact_rules() -> dict[str, frozenset[str]]:
+    """Single files whose flags do not follow from the directory they sit in."""
+    rules = dict(_SHARED_EXACT_RULES)
+    for pkg in layout.dart_packages():
+        for manifest in layout.DART_MANIFESTS:
+            rules[layout.join(pkg, manifest)] = FLUTTER_FULL
+        for config in layout.DART_LINT_CONFIG:
+            rules[layout.join(pkg, config)] = frozenset({"flutter_lint"})
+    return rules
 
 
 def classify(files: Iterable[str], *, force_all: bool = False) -> dict[str, bool]:
@@ -82,7 +110,7 @@ def classify(files: Iterable[str], *, force_all: bool = False) -> dict[str, bool
         return {name: True for name in FLAG_NAMES}
     found: set[str] = set()
     for raw in files:
-        found.update(_flags_for(_posix(raw)))
+        found.update(_flags_for(layout.posix(raw)))
     return {name: name in found for name in FLAG_NAMES}
 
 
@@ -90,13 +118,6 @@ def format_github_output(flags: dict[str, bool]) -> str:
     return "".join(
         f"{name}={'true' if flags[name] else 'false'}\n" for name in FLAG_NAMES
     )
-
-
-def _posix(path: str) -> str:
-    normalised = path.replace("\\", "/")
-    while normalised.startswith("./"):
-        normalised = normalised[2:]
-    return normalised
 
 
 def _is_doc(path: str) -> bool:
@@ -109,18 +130,14 @@ def _is_doc(path: str) -> bool:
     return stem in _DOC_FILENAMES or stem.split(".")[0] in _DOC_FILENAMES
 
 
-def _under(path: str, prefix: str) -> bool:
-    return path == prefix or path.startswith(prefix + "/")
-
-
 def _flags_for(path: str) -> frozenset[str]:
     if not path or _is_doc(path):
         return frozenset()
-    exact = _EXACT_RULES.get(path)
+    exact = _exact_rules().get(path)
     if exact is not None:
         return exact
-    for prefix, flags in _PREFIX_RULES:
-        if _under(path, prefix):
+    for prefix, flags in _prefix_rules():
+        if layout.under(path, prefix):
             return flags
     return frozenset()
 

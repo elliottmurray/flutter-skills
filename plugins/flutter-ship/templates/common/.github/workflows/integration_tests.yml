@@ -3,18 +3,15 @@ name: Integration Tests
 on:
   push:
     branches: [main]
-    paths:
-      - 'lib/**'
-      - 'test/**'
-      - 'integration_test/**'
-      - 'ios/**'
-      - 'pubspec.yaml'
-      - 'pubspec.lock'
-      - 'scripts/run_integration_tests.sh'
-      - '.github/workflows/integration_tests.yml'
-      - '.github/workflows/flutter.yml'
-      - '.github/actions/classify-changes/**'
-      - 'scripts/ci_change_classifier.py'
+    # No path allowlist: it would duplicate the classifier's idea of where
+    # code lives and silently stop firing if the app ever moves. The cheap
+    # `classify` job is the real gate; expensive steps sit behind its flags.
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - 'specs/**'
+      - '.claude/**'
+      - 'LICENSE'
   workflow_dispatch:
 
 jobs:
@@ -25,6 +22,7 @@ jobs:
       flutter_unit: ${{ steps.classify.outputs.flutter_unit }}
       flutter_complexity: ${{ steps.classify.outputs.flutter_complexity }}
       flutter_integration: ${{ steps.classify.outputs.flutter_integration }}
+      dart_dir: ${{ steps.classify.outputs.dart_dir }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -65,6 +63,7 @@ jobs:
           channel: stable
           cache: false
       - name: Disable Xcode indexing (CI build speed)
+        working-directory: ${{ needs.classify.outputs.dart_dir }}
         run: echo "COMPILER_INDEX_STORE_ENABLE = NO" >> ios/Flutter/Debug.xcconfig
       - name: Run integration tests with screenshot capture
         timeout-minutes: 30

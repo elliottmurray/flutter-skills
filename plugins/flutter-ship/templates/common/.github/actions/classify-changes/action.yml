@@ -29,10 +29,21 @@ outputs:
   python_complexity:
     description: Run the Python complexity gate
     value: ${{ steps.classify.outputs.python_complexity }}
+  dart_dir:
+    description: Repo-relative path of the primary Flutter package
+    value: ${{ steps.layout.outputs.dart_dir }}
+  python_dir:
+    description: Repo-relative path of the primary Python package
+    value: ${{ steps.layout.outputs.python_dir }}
 
 runs:
   using: composite
   steps:
+    - name: Read project layout
+      id: layout
+      shell: bash
+      run: python3 scripts/project_layout.py --github-output "$GITHUB_OUTPUT"
+
     - name: Collect changed files
       id: files
       shell: bash

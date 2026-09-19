@@ -1,7 +1,7 @@
 #!/bin/sh
 # Run checks when relevant files are staged. Uses ci_change_classifier.py so
 # local skips match CI: docs-only, lint-only, and complexity-only diffs do
-# not run unit tests.
+# not run unit tests. Package locations come from scripts/project_layout.py.
 #
 # Install: cp scripts/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
 
@@ -12,27 +12,42 @@ CLASSIFY=$(git diff --cached --name-only | PYTHONPATH="${REPO_ROOT}/scripts" \
   python3 "${REPO_ROOT}/scripts/ci_change_classifier.py" --files-from -) || exit 1
 eval "$(echo "$CLASSIFY" | sed 's/^/export /')"
 
+layout() {
+  python3 "${REPO_ROOT}/scripts/project_layout.py" "$1"
+}
+
 if [ "${flutter_lint}" = "true" ] || [ "${flutter_unit}" = "true" ]; then
   echo "Flutter lint/unit flags set — running flutter checks..."
-  cd "${REPO_ROOT}" || exit 1
 
-  if [ "${flutter_lint}" = "true" ]; then
-    echo "--- flutter analyze ---"
-    env -u GIT_DIR -u GIT_WORK_TREE flutter analyze
-    [ $? -ne 0 ] && FAILED=1
-  fi
+  for pkg in $(layout --dart-packages); do
+    pkg_dir="${REPO_ROOT}"
+    [ "$pkg" = "." ] || pkg_dir="${REPO_ROOT}/${pkg}"
+    [ -f "${pkg_dir}/pubspec.yaml" ] || continue
+    cd "${pkg_dir}" || exit 1
+    echo "--- ${pkg} ---"
 
-  if [ "${flutter_unit}" = "true" ]; then
-    echo "--- flutter test ---"
-    env -u GIT_DIR -u GIT_WORK_TREE flutter test
-    [ $? -ne 0 ] && FAILED=1
-  fi
+    if [ "${flutter_lint}" = "true" ]; then
+      echo "--- flutter analyze ---"
+      env -u GIT_DIR -u GIT_WORK_TREE flutter analyze
+      [ $? -ne 0 ] && FAILED=1
+    fi
+
+    if [ "${flutter_unit}" = "true" ]; then
+      echo "--- flutter test ---"
+      env -u GIT_DIR -u GIT_WORK_TREE flutter test
+      [ $? -ne 0 ] && FAILED=1
+    fi
+  done
 fi
 
 if [ "${python_lint}" = "true" ] || [ "${python_unit}" = "true" ]; then
-  if [ -d "${REPO_ROOT}/backend" ]; then
-    echo "Python lint/unit flags set — running backend checks..."
-    cd "${REPO_ROOT}/backend" || exit 1
+  echo "Python lint/unit flags set — running backend checks..."
+
+  for pkg in $(layout --python-packages); do
+    pkg_dir="${REPO_ROOT}/${pkg}"
+    [ -d "${pkg_dir}" ] || continue
+    cd "${pkg_dir}" || exit 1
+    echo "--- ${pkg} ---"
 
     if [ "${python_lint}" = "true" ]; then
       echo "--- ruff ---"
@@ -45,7 +60,7 @@ if [ "${python_lint}" = "true" ] || [ "${python_unit}" = "true" ]; then
       uv run pytest -q
       [ $? -ne 0 ] && FAILED=1
     fi
-  fi
+  done
 fi
 
 if [ $FAILED -ne 0 ]; then
