@@ -1,6 +1,10 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "flutter-skills",
+  "owner": {
+    "name": "Elliott Murray",
+    "email": "elliottmurray@gmail.com"
+  },
   "description": "Claude Code plugin for shipping Flutter iOS apps with CI, tests, feature flags, and quality gates",
   "plugins": [
     {
