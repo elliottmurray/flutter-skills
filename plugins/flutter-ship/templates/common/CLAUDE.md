@@ -24,6 +24,14 @@ CI builds a signed IPA on the Release workflow. Use `/ios-ci-setup` for
 Apple certs, profiles, and GitHub secrets (`docs/ios-ci.md`). Do not bake
 `--dart-define` into release builds; that defeats Remote Config kill switches.
 
+## Project layout
+
+The Flutter app owns the repo root; the FastAPI service lives in `backend/`.
+`scripts/project_layout.py` is the single source of truth for both — the CI
+classifier, complexity sensor, pre-commit hook, integration-test runner and
+workflows all read it. Never hardcode `lib/` or `backend/` in tooling; add a
+`.flutter-ship.json` instead. See [docs/project-layout.md](docs/project-layout.md).
+
 ## Complexity
 
 `scripts/complexity_sensor.py` plus `.complexity-baseline.json`. Use
