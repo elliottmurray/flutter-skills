@@ -18,6 +18,14 @@ background / kill / relaunch. No app-specific subcommands (no domain
 helpers, no "do the happy path" wrappers). If a flow needs those, write
 an integration test instead.
 
+If the **Dart/Flutter MCP server** is connected, prefer its tools
+(`launch_app`, `get_widget_tree`, `tap`) for tree and tap — they are better
+integrated and `flutter-add-integration-test` upstream knows how to turn that
+session into a test. Use this driver when there is no MCP server, or for the
+iOS-specific parts it does not reach: `simctl` device screenshots including
+native UI, background / foreground, relaunch by bundle id, and choosing a
+simulator UDID.
+
 ## Driver
 
 Prefer the copy in the app repo (installed by `/setup-project`):
@@ -57,6 +65,23 @@ Need a specific device:
 python3 scripts/sim_driver.py boot --udid "$SIMULATOR_UDID"
 python3 scripts/sim_driver.py run --device "$SIMULATOR_UDID"
 ```
+
+### iPad
+
+`boot` with no `--udid` reuses whatever is already booted, and otherwise
+creates an **iPhone**. For iPad, find or create the simulator yourself and pass
+its UDID:
+
+```bash
+xcrun simctl list devices available | grep -i ipad
+python3 scripts/sim_driver.py boot --udid "$IPAD_UDID"
+python3 scripts/sim_driver.py run --device "$IPAD_UDID"
+python3 scripts/sim_driver.py screenshot screenshots/verify-ipad.png
+```
+
+Running a layout change against an iPhone and an iPad simulator is the cheap
+check on the responsive work that `flutter-build-responsive-layout` designs.
+Remember `kill` between the two — one `flutter run` at a time.
 
 ## 2. Drive
 

@@ -15,6 +15,12 @@ A review pass over **what changed**, not a whole-repo audit. Default scope
 is the diff against `HEAD`, so this runs the same way before a commit as
 `/tdd` does after one.
 
+This is the **review** direction: it ends in a verdict, not a scaffold. For
+building a new feature forward from nothing, `flutter-apply-architecture-best-practices`
+in [flutter/agent-plugins](https://github.com/flutter/agent-plugins) is the
+generative path over the same doctrine; step 5 below is that workflow extended
+across the client/API contract.
+
 Both sides of the wire are in scope. A ViewModel that builds URLs and a
 route handler that runs a query are the same mistake, and the contract
 between them is where layering actually breaks.
