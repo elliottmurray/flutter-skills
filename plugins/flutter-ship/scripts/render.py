@@ -6,6 +6,9 @@ Usage:
 
 Always copies templates/common/. With --firebase / --fastapi, also copies
 those overlay trees. Existing files are overwritten only with --force.
+
+Files that do not decode as UTF-8 are copied byte-for-byte instead of being
+rendered; build detritus (`__pycache__`, `.pyc`, `.DS_Store`) is skipped.
 """
 
 from __future__ import annotations
@@ -22,6 +25,28 @@ DEFAULTS = {
     "FLUTTER_VERSION": "3.47.2",
     "RUNNER_LABEL": "macos-latest",
     "APPLE_TEAM_ID": "YOUR_TEAM_ID",
+}
+
+# Build detritus that can appear beside the templates (running the template
+# tests writes `__pycache__` into them) but is never part of a rendered project.
+SKIP_DIRS = {"__pycache__", ".pytest_cache", ".ruff_cache", ".venv"}
+SKIP_NAMES = {".DS_Store"}
+SKIP_SUFFIXES = {".pyc", ".pyo"}
+
+# Copied byte-for-byte without trying to decode them. Not exhaustive: anything
+# else that fails to decode as UTF-8 is treated as binary too.
+BINARY_SUFFIXES = {
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".gif",
+    ".ico",
+    ".pdf",
+    ".zip",
+    ".ttf",
+    ".otf",
+    ".p12",
+    ".mobileprovision",
 }
 
 
@@ -47,6 +72,25 @@ def render_text(text: str, mapping: dict[str, str]) -> str:
     return text
 
 
+def is_skipped(rel: Path) -> bool:
+    """True for build detritus that should never reach a rendered project."""
+    return (
+        any(part in SKIP_DIRS for part in rel.parts)
+        or rel.name in SKIP_NAMES
+        or rel.suffix in SKIP_SUFFIXES
+    )
+
+
+def read_text(path: Path) -> str | None:
+    """File contents as UTF-8 text, or None when the file is binary."""
+    if path.suffix in BINARY_SUFFIXES:
+        return None
+    try:
+        return path.read_text(encoding="utf-8")
+    except (UnicodeDecodeError, ValueError):
+        return None
+
+
 def copy_tree(src: Path, dest: Path, mapping: dict[str, str], *, force: bool) -> list[str]:
     written: list[str] = []
     if not src.is_dir():
@@ -55,14 +99,17 @@ def copy_tree(src: Path, dest: Path, mapping: dict[str, str], *, force: bool) ->
         if path.is_dir():
             continue
         rel = path.relative_to(src)
+        if is_skipped(rel):
+            continue
         target = dest / rel
         if target.exists() and not force:
             continue
+        text = read_text(path)
         target.parent.mkdir(parents=True, exist_ok=True)
-        if path.suffix in {".png", ".jpg", ".jpeg", ".p12", ".mobileprovision"}:
+        if text is None:
             shutil.copy2(path, target)
         else:
-            target.write_text(render_text(path.read_text(), mapping))
+            target.write_text(render_text(text, mapping), encoding="utf-8")
         written.append(str(rel))
     return written
 

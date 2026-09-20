@@ -152,6 +152,7 @@ Skills when you need them:
   /complexity            # ratchet cyclomatic complexity
   /flutter-sdk-check     # bump the pinned Flutter version
   /pr-review             # review a PR
+  /architecture          # layer review of the diff (Flutter + backend)
 ```
 
 If they chose iOS CI now, remind them `/ios-ci-setup` still has to put

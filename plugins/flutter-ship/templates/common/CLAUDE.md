@@ -32,6 +32,14 @@ classifier, complexity sensor, pre-commit hook, integration-test runner and
 workflows all read it. Never hardcode `lib/` or `backend/` in tooling; add a
 `.flutter-ship.json` instead. See [docs/project-layout.md](docs/project-layout.md).
 
+## Architecture
+
+UI is MVVM (`lib/ui/features/<feature>/{views,view_models}`), data access is
+the repository pattern (`lib/data/{services,repositories}`), and a widget
+never calls a service. Use `/architecture` to check a change against the
+layers on both sides of the wire. Edit this section when the app deviates —
+the skill follows what is written here.
+
 ## Complexity
 
 `scripts/complexity_sensor.py` plus `.complexity-baseline.json`. Use
@@ -54,6 +62,7 @@ Treat these as high risk until this list is edited for the app:
 - `/complexity` — report and ratchet cyclomatic complexity
 - `/flutter-sdk-check` — bump the pinned Flutter version
 - `/pr-review` — review a PR against the danger areas above
+- `/architecture` — layer review of the current diff (Flutter + backend)
 - `/ios-ci-setup` — Apple certs, profiles, GitHub secrets
 - `/self-hosted-runner` — Mac LaunchAgent for integration tests (`docs/self-hosted-runner.md`)
 - `/firebase-setup` / `/app-check` — if using Firebase
