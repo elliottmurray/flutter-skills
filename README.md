@@ -75,7 +75,7 @@ See [CATALOG.md](CATALOG.md) for what each skill does.
 
 The Flutter team ships [flutter/agent-plugins](https://github.com/flutter/agent-plugins),
 which also pulls in [dart-lang/skills](https://github.com/dart-lang/skills).
-Install both: they cover a different axis and are meant to sit side by side.
+Feel free to use both: they cover the build side of flutter. This is complimentary and focused more on the release or shipping.
 
 | | Covers |
 |---|---|
