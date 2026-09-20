@@ -36,13 +36,56 @@ files. Never paste full secret values into the PR body.
 
 ## 1. Prerequisites
 
-Work on a Mac with Xcode. Confirm:
+### Apple account
+
+Confirm these before opening the portal. None can be worked around from
+this Mac, so stop and say which is missing rather than starting step 2.
+
+- A paid **Apple Developer Program** membership. A free Apple ID cannot
+  create an Apple Distribution certificate, an App Store provisioning
+  profile, or an App Store Connect API key — the portal does not offer
+  them. `security find-identity` passing says nothing about this.
+- An **Admin** or **Account Holder** role on that team. A Developer role
+  can make a certificate but cannot create the Team API key in step 5.
+- For a real upload, the **app record already exists** in App Store
+  Connect for this bundle id (Apps → **+** → New App). Step 7's dry run
+  does not need it; the first TestFlight upload does.
+
+### This Mac
 
 ```bash
-gh auth status
+xcode-select -p    # must end in Xcode.app, not CommandLineTools
 xcodebuild -version
 security find-identity -v -p codesigning | head
 ```
+
+If `xcode-select -p` prints `/Library/Developer/CommandLineTools`, the
+Xcode path in step 4 does not exist. Install Xcode, then
+`sudo xcode-select -s /Applications/Xcode.app/Contents/Developer`.
+
+Xcode also has to be **signed into an Apple ID on that team** (Xcode →
+Settings → Accounts). Step 4 creates the private key through it.
+
+### GitHub
+
+```bash
+gh auth status
+```
+
+The token needs `repo` and `workflow` scope — `gh auth status` lists what
+it has, and `gh auth refresh -s workflow` adds a missing one. The repo
+needs Actions enabled. `release.yml` builds on `macos-latest`, at 10×
+minutes on a private repo; `/self-hosted-runner` moves that to a local Mac.
+
+### Browser
+
+Steps 2–5 read better with the Claude in Chrome extension installed and
+permitted for `developer.apple.com` and `appstoreconnect.apple.com`.
+Without it, run the same steps as a spoken checklist — name the page and
+the button, wait for them to confirm. A missing extension is not a reason
+to stop.
+
+### The project
 
 Read the bundle id and team id the workflows already use:
 
