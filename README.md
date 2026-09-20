@@ -8,6 +8,35 @@ so the next thing you write is a test, not a workflow.
 Cursor can consume the same `SKILL.md` files later. This first ship is
 Claude Code only.
 
+## Requirements
+
+| | Why |
+|---|---|
+| macOS with full Xcode | `flutter build ipa`, the iOS Simulator, and the Keychain that holds your signing key. Command Line Tools alone is not enough — `xcode-select -p` has to end in `Xcode.app` |
+| Flutter SDK | `/setup-project` runs `flutter create`; the workflows pin a version |
+| `gh`, authenticated | Every skill that touches CI shells out to it. The token needs `repo` and `workflow` scope |
+| A GitHub repo with Actions enabled | The rendered workflows are GitHub Actions. Nothing here emits GitLab CI, Bitrise or Codemagic |
+
+`release.yml` and the integration job run on `macos-latest`, billed at 10× the
+minute rate on a private repo. `/self-hosted-runner` moves them to a Mac you own.
+
+Shipping to TestFlight or the App Store also needs a paid **Apple Developer
+Program** membership and an **Admin** or **Account Holder** role on the team.
+A free Apple ID cannot create a distribution certificate, an App Store
+provisioning profile, or an App Store Connect API key, so `/ios-ci-setup`
+stops early without one. Everything else — tests, lint, complexity,
+the simulator — works without paying Apple.
+
+### Browsers are optional
+
+`/ios-ci-setup`, `/firebase-setup` and `/app-check` walk cloud consoles. With
+the Claude in Chrome extension installed, and permission granted for
+`developer.apple.com`, `appstoreconnect.apple.com` and
+`console.firebase.google.com`, Claude drives those pages. Without it each
+skill falls back to naming the page and the button and waiting for you —
+slower, same result. Either way you sign in and clear 2FA yourself; Claude
+never handles your Apple or Google credentials.
+
 ## Install
 
 ```text

@@ -34,7 +34,14 @@ Bundle id in the console must match the iOS target **exactly**.
 
 ## 2. Chrome
 
-Open [console.firebase.google.com](https://console.firebase.google.com).
+Needs a Google account that can create a Firebase project, and the Claude
+in Chrome extension installed and permitted for
+`console.firebase.google.com`. Without the extension, run every step below
+as a spoken checklist — name the page and the button, wait for them to
+confirm, ask them to read values back. The result is the same; do not stop
+for a missing extension.
+
+With it, open [console.firebase.google.com](https://console.firebase.google.com).
 If Google 2FA or an account picker appears, wait. Drive Chrome only after
 they are inside the console. If a click misses, fall back to naming the
 button and waiting.
