@@ -5,6 +5,10 @@ run `/setup-project` in an empty directory (or a new Flutter repo) to get CI,
 lint, unit tests, a complexity ratchet, and an iOS integration-test harness
 so the next thing you write is a test, not a workflow.
 
+New here? [docs/getting-started.md](docs/getting-started.md) goes from an empty
+directory to a Flutter app calling its own FastAPI backend on the simulator,
+and explains where the Firebase credentials go on each side.
+
 Cursor can consume the same `SKILL.md` files later. This first ship is
 Claude Code only.
 
