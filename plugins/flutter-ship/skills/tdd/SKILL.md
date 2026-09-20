@@ -13,6 +13,11 @@ Follow the Red-Green-Refactor cycle for the requested change. Apply TDD
 where practical — skip it for trivial changes, boilerplate, or pure UI
 layout that cannot be meaningfully unit tested.
 
+This skill owns the **process**. Where they are installed, defer the mechanics
+to `dart-add-unit-test` (file layout, `package:test` idiom),
+`dart-generate-test-mocks` and `flutter-add-widget-test`. Backend pytest has no
+upstream counterpart — it stays here.
+
 ## Process
 
 1. **Understand the change** — Read the relevant source files and existing
