@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from render import copy_tree, package_name, render_text, main as render_main
+from render import copy_tree, is_skipped, package_name, render_text, main as render_main
 
 
 class PackageNameTest(unittest.TestCase):
@@ -44,6 +44,47 @@ class RenderTest(unittest.TestCase):
                 (dest / "test" / "config" / "app_channel_test.dart").read_text(),
                 "import 'package:demo_app/config/app_channel.dart';\n",
             )
+
+    def test_copy_tree_copies_undecodable_file_verbatim(self):
+        """A binary with an unlisted suffix must not be read as text."""
+        with tempfile.TemporaryDirectory() as tmp:
+            src = Path(tmp) / "src"
+            dest = Path(tmp) / "dest"
+            src.mkdir()
+            blob = b"\xf3\r\n{{APP_NAME}}"
+            (src / "keystore.jks").write_bytes(blob)
+            written = copy_tree(src, dest, {"APP_NAME": "Demo"}, force=True)
+            self.assertEqual(written, ["keystore.jks"])
+            self.assertEqual((dest / "keystore.jks").read_bytes(), blob)
+
+    def test_copy_tree_copies_known_binary_suffix_verbatim(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            src = Path(tmp) / "src"
+            dest = Path(tmp) / "dest"
+            src.mkdir()
+            png = b"\x89PNG\r\n{{APP_NAME}}"
+            (src / "icon.png").write_bytes(png)
+            copy_tree(src, dest, {"APP_NAME": "Demo"}, force=True)
+            self.assertEqual((dest / "icon.png").read_bytes(), png)
+
+    def test_copy_tree_skips_build_detritus(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            src = Path(tmp) / "src"
+            dest = Path(tmp) / "dest"
+            cache = src / "scripts" / "__pycache__"
+            cache.mkdir(parents=True)
+            (cache / "helper.cpython-311.pyc").write_bytes(b"\xf3\r\n\x00")
+            (src / ".DS_Store").write_bytes(b"\x00\x01Bud1")
+            (src / "scripts" / "helper.py").write_text("# {{APP_NAME}}\n")
+            written = copy_tree(src, dest, {"APP_NAME": "Demo"}, force=True)
+            self.assertEqual(written, ["scripts/helper.py"])
+            self.assertFalse((dest / "scripts" / "__pycache__").exists())
+            self.assertFalse((dest / ".DS_Store").exists())
+
+    def test_is_skipped(self):
+        self.assertTrue(is_skipped(Path("scripts/__pycache__/x.pyc")))
+        self.assertTrue(is_skipped(Path("docs/.DS_Store")))
+        self.assertFalse(is_skipped(Path("scripts/helper.py")))
 
     def test_render_copies_sim_driver(self):
         with tempfile.TemporaryDirectory() as tmp:
