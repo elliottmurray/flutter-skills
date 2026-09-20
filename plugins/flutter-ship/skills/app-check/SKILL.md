@@ -17,6 +17,13 @@ to `false`.
 A Firebase project and iOS app must exist. If `GoogleService-Info.plist`
 is missing, stop and run `/firebase-setup` first.
 
+Step 1 creates a DeviceCheck key on the Apple developer portal, so it needs
+the same paid **Apple Developer Program** membership and **Admin** or
+**Account Holder** role as `/ios-ci-setup`. Both steps read better with the
+Claude in Chrome extension permitted for `developer.apple.com` and
+`console.firebase.google.com`; without it, walk them through the same pages
+as a spoken checklist rather than stopping.
+
 `DISABLE_FIREBASE_APP_CHECK` is a dart-define. It cannot live in Remote
 Config: App Check gates the RC fetch, so a kill switch served by RC
 cannot disable the thing that loads RC.
