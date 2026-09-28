@@ -282,9 +282,49 @@ cd backend && uv run pytest -q && uv run ruff check .
 
 The first commit that adds `hello_client.dart` moves the complexity baseline.
 `/complexity` owns the ratchet; the PostToolUse hook stays quiet until a
-sensor exists.
+sensor exists. The sync-model PostToolUse hook stays quiet until both `lib/`
+and `backend/` hold models.
 
-## 7. Where Firebase config goes
+## 7. Keeping the two halves in sync
+
+Once `lib/` and `backend/` both exist, the **sync-model** hook watches your
+edits. Edit a model file and, if a counterpart exists on the other side, a
+nudge appears: fields missing on the other side, fields that exist only
+there, and tests missing on either side.
+
+What it syncs, by default:
+
+- **Models by name.** Any class under `lib/` with the same name as one under
+  `backend/` is a pair. Enums too.
+- **Fields, normalized.** `emailAddress` ≡ `email_address`,
+  `APP_STORE` ≡ `appStore`. Types are not compared — names are the contract.
+- **Tests by stem.** `test/<stem>_test.dart` ↔ `backend/tests/test_<stem>.py`.
+
+The nudge is advisory. It never blocks an edit, and it stays quiet when a
+model has no counterpart — one-sided models are legal.
+
+### Changing what is synced
+
+`.sync-model.json` in the project root:
+
+```json
+{
+  "pairs": [
+    { "dart": "lib/models/user.dart", "python": "backend/models/account.py" }
+  ],
+  "ignore": ["AppChannel"]
+}
+```
+
+- `pairs` — compare two specific files, for models whose names differ across
+  sides.
+- `ignore` — model names to never nudge about.
+
+No file, no problem: without it, only name matching runs. `/sync-model`
+audits the whole project — every pair, every drift, every missing test — and
+is where you change this config as the app grows.
+
+## 8. Where Firebase config goes
 
 Nothing above needed Firebase. Adding it changes both halves, and the two halves
 take different credentials. This is the part people get wrong.
@@ -384,12 +424,13 @@ console. Until then `FIREBASE_APP_CHECK_ENABLED=false` locally is the sane
 default, and the flag is deliberately absent from `release.yml` so you cannot
 bake it into an IPA.
 
-## 8. Where to go next
+## 9. Where to go next
 
 Roughly in order, each one standalone:
 
 | Skill | What it unblocks |
 |---|---|
+| `/sync-model` | Audit and configure Dart ↔ Python model sync |
 | `/tdd` | Red-green-refactor for the next feature |
 | `/verify` | Drive the running simulator: tap, eval, screenshot |
 | `/fastapi-setup` | Docker, App Check on real routes |

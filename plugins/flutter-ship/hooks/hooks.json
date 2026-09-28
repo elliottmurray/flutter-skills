@@ -1,5 +1,5 @@
 {
-  "description": "Advisory complexity nudge after Dart/Python edits. Quiet when the project has no sensor.",
+  "description": "Advisory nudges after Dart/Python edits: complexity ceiling and cross-language model sync. Quiet when nothing applies.",
   "hooks": {
     "PostToolUse": [
       {
@@ -10,6 +10,17 @@
             "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/complexity_sensor_hook.py\"",
             "timeout": 20,
             "statusMessage": "Checking cyclomatic complexity..."
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/sync_model_hook.py\"",
+            "timeout": 20,
+            "statusMessage": "Checking model sync..."
           }
         ]
       }
