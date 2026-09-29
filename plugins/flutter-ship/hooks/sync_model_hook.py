@@ -3,10 +3,11 @@
 
 Keeps Dart models (lib/) and Python models (backend/) in sync. When a model
 file changes, finds the counterpart class on the other side by name, compares
-fields, and checks test parity. An optional .sync-model.json in the project
-root declares explicit pairs (for models whose names differ across sides) and
-ignored model names. Advisory only: always exits 0, quiet when the changed
-file holds no models or no counterpart exists.
+fields, and checks test parity. When a test file changes, compares the test
+cases on both sides (Dart test descriptions vs pytest function names, slug-
+normalized). An optional .sync-model.json in the project root declares
+explicit pairs (for models whose names differ across sides) and ignored model
+names. Advisory only: always exits 0, quiet when nothing applies.
 """
 
 from __future__ import annotations
@@ -34,6 +35,9 @@ _DART_ENUM = re.compile(r"^enum\s+(\w+)\s*\{", re.MULTILINE)
 _PY_CLASS = re.compile(r"^class\s+(\w+)(?:\s*\(([^)]*)\))?", re.MULTILINE)
 _PY_ENUM_BASE = re.compile(r"\b(Enum|StrEnum|IntEnum)\b")
 _IDENT = re.compile(r"[A-Za-z_]\w*")
+# Test cases: Dart test descriptions vs pytest function names.
+_DART_TEST_CASE = re.compile(r"^\s*(?:test|testWidgets)\(\s*(['\"])(.*?)\1", re.MULTILINE)
+_PY_TEST_CASE = re.compile(r"^\s*(?:async\s+)?def (test_\w+)", re.MULTILINE)
 
 
 def snake(name: str) -> str:
@@ -125,6 +129,61 @@ def compare(changed_fields: list[str], other_fields: list[str]) -> tuple[list[st
     missing = sorted(changed - other)
     extra = sorted(other - changed)
     return missing, extra
+
+
+def slug(text: str) -> str:
+    """Normalize a test description/name to a comparable canonical form.
+
+    Strips a leading `test_` so pytest function names and Dart test
+    descriptions slug to the same form.
+    """
+    text = text.lower()
+    if text.startswith("test_"):
+        text = text[len("test_"):]
+    return re.sub(r"[^a-z0-9]+", "_", text).strip("_")
+
+
+def dart_test_cases(text: str) -> list[str]:
+    """Extract test case names from Dart test source.
+
+    Convention: the case name is the test/testWidgets description, slugified.
+    """
+    return [slug(m.group(2)) for m in _DART_TEST_CASE.finditer(text)]
+
+
+def py_test_cases(text: str) -> list[str]:
+    """Extract test case names from pytest source.
+
+    Convention: the case name is the test function name, slugified — the
+    `test_` prefix is stripped by slug(), matching the Dart description.
+    """
+    return [slug(m.group(1)) for m in _PY_TEST_CASE.finditer(text)]
+
+
+def check_test_cases(path: Path, stem: str, edited_side: str, findings: list[str]) -> None:
+    """Compare test cases between a test file and its cross-language counterpart."""
+    if edited_side == "dart":
+        extract, other_extract = dart_test_cases, py_test_cases
+        counterpart = find_test([PROJECT_DIR / PY_DIR / PY_TEST_DIR], stem, ".py")
+        other_side = "Python"
+    else:
+        extract, other_extract = py_test_cases, dart_test_cases
+        counterpart = find_test([PROJECT_DIR / DART_TEST_DIR], stem, "_test.dart")
+        other_side = "Dart"
+    if counterpart is None:
+        return
+    cases = extract(path.read_text(errors="replace"))
+    other_cases = other_extract(counterpart.read_text(errors="replace"))
+    missing = sorted(set(cases) - set(other_cases))
+    extra = sorted(set(other_cases) - set(cases))
+    if not missing and not extra:
+        return
+    detail = [f"  {counterpart.relative_to(PROJECT_DIR)} (test counterpart):"]
+    if missing:
+        detail.append(f"    - cases only in {edited_side}: {', '.join(missing)}")
+    if extra:
+        detail.append(f"    - cases only in {other_side}: {', '.join(extra)}")
+    findings.extend(detail)
 
 
 def check_counterpart(
@@ -268,7 +327,22 @@ def main(argv: list[str] | None = None) -> int:
         None,
     )
     matched = False
-    if pair_entry is not None:
+    is_dart_test = rel.parts[0] == DART_TEST_DIR and path.name.endswith("_test.dart")
+    is_py_test = (
+        rel.parts[0] == PY_DIR
+        and len(rel.parts) > 1
+        and rel.parts[1] == PY_TEST_DIR
+        and path.name.startswith("test_")
+        and path.suffix == ".py"
+    )
+    if is_dart_test or is_py_test:
+        stem = (
+            path.stem[: -len("_test")]
+            if is_dart_test
+            else path.stem[len("test_"):]
+        )
+        check_test_cases(path, stem, "dart" if is_dart_test else "python", findings)
+    elif pair_entry is not None:
         dart_ref = pair_entry.get("dart") or ""
         py_ref = pair_entry.get("python") or ""
         dart_path = PROJECT_DIR / dart_ref if dart_ref else None
@@ -322,7 +396,7 @@ def main(argv: list[str] | None = None) -> int:
     if not findings:
         return 0
 
-    other_side = "Python" if rel.parts[0] == DART_DIR else "Dart"
+    other_side = "Dart" if rel.parts[0] == PY_DIR else "Python"
     json.dump(
         {
             "hookSpecificOutput": {

@@ -11,9 +11,12 @@ from unittest.mock import patch
 from sync_model_hook import (
     compare,
     dart_models,
+    dart_test_cases,
     find_test,
     main,
     py_models,
+    py_test_cases,
+    slug,
     snake,
 )
 
@@ -100,6 +103,51 @@ class ExtractTest(unittest.TestCase):
             py_models("class Account:\n    name: str\n    email: str\n"),
             {"Account": ["name", "email"]},
         )
+
+
+class SlugTest(unittest.TestCase):
+    def test_description_slug(self):
+        self.assertEqual(slug("round-trips through serialization"), "round_trips_through_serialization")
+
+    def test_python_name_slug(self):
+        self.assertEqual(slug("test_round_trips_through_serialization"), "round_trips_through_serialization")
+
+    def test_both_forms_match(self):
+        self.assertEqual(
+            slug("constructs with valid fields"),
+            slug("test_constructs_with_valid_fields"),
+        )
+
+
+class ExtractCasesTest(unittest.TestCase):
+    def test_dart_descriptions(self):
+        text = """
+void main() {
+  test('constructs with valid fields', () {});
+  testWidgets('round-trips through serialization', (tester) async {});
+}
+"""
+        self.assertEqual(
+            dart_test_cases(text),
+            ["constructs_with_valid_fields", "round_trips_through_serialization"],
+        )
+
+    def test_python_function_names(self):
+        text = """
+def test_constructs_with_valid_fields():
+    pass
+
+
+def test_round_trips_through_serialization():
+    pass
+"""
+        self.assertEqual(
+            py_test_cases(text),
+            ["constructs_with_valid_fields", "round_trips_through_serialization"],
+        )
+
+    def test_non_test_functions_ignored(self):
+        self.assertEqual(py_test_cases("def helper():\n    pass\n"), [])
 
 
 class CompareTest(unittest.TestCase):
@@ -339,6 +387,95 @@ class MainTest(unittest.TestCase):
             payload = json.loads(out)
             ctx = payload["hookSpecificOutput"]["additionalContext"]
             self.assertIn("backend/models/user.py", ctx)
+
+    def test_dart_test_drift_reports_case_diff(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = self._project(tmp)
+            (root / "test" / "models" / "user_test.dart").write_text(
+                "void main() {\n"
+                "  test('constructs with valid fields', () {});\n"
+                "  test('rejects an empty name', () {});\n"
+                "}\n"
+            )
+            (root / "backend" / "tests" / "test_user.py").write_text(
+                "def test_constructs_with_valid_fields():\n    pass\n"
+            )
+            out = self._run(
+                {
+                    "tool_input": {
+                        "file_path": str(root / "test" / "models" / "user_test.dart")
+                    }
+                },
+                root,
+            )
+            payload = json.loads(out)
+            ctx = payload["hookSpecificOutput"]["additionalContext"]
+            self.assertIn("backend/tests/test_user.py", ctx)
+            self.assertIn("rejects_an_empty_name", ctx)
+
+    def test_python_test_drift_reports_case_diff(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = self._project(tmp)
+            (root / "test" / "models" / "user_test.dart").write_text(
+                "void main() {\n"
+                "  test('constructs with valid fields', () {});\n"
+                "}\n"
+            )
+            (root / "backend" / "tests" / "test_user.py").write_text(
+                "def test_constructs_with_valid_fields():\n    pass\n\n\n"
+                "def test_rejects_an_empty_name():\n    pass\n"
+            )
+            out = self._run(
+                {
+                    "tool_input": {
+                        "file_path": str(root / "backend" / "tests" / "test_user.py")
+                    }
+                },
+                root,
+            )
+            payload = json.loads(out)
+            ctx = payload["hookSpecificOutput"]["additionalContext"]
+            self.assertIn("test/models/user_test.dart", ctx)
+            self.assertIn("rejects_an_empty_name", ctx)
+
+    def test_equal_test_cases_are_quiet(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = self._project(tmp)
+            (root / "test" / "models" / "user_test.dart").write_text(
+                "void main() {\n"
+                "  test('constructs with valid fields', () {});\n"
+                "  test('round-trips through serialization', () {});\n"
+                "}\n"
+            )
+            (root / "backend" / "tests" / "test_user.py").write_text(
+                "def test_constructs_with_valid_fields():\n    pass\n\n\n"
+                "def test_round_trips_through_serialization():\n    pass\n"
+            )
+            out = self._run(
+                {
+                    "tool_input": {
+                        "file_path": str(root / "test" / "models" / "user_test.dart")
+                    }
+                },
+                root,
+            )
+            self.assertEqual(out, "")
+
+    def test_test_file_without_counterpart_is_quiet(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = self._project(tmp)
+            (root / "test" / "models" / "user_test.dart").write_text(
+                "void main() {\n  test('constructs with valid fields', () {});\n}\n"
+            )
+            out = self._run(
+                {
+                    "tool_input": {
+                        "file_path": str(root / "test" / "models" / "user_test.dart")
+                    }
+                },
+                root,
+            )
+            self.assertEqual(out, "")
 
     def test_in_sync_models_with_tests_are_quiet(self):
         with tempfile.TemporaryDirectory() as tmp:
