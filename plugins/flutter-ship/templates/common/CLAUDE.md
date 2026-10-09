@@ -48,6 +48,14 @@ never calls a service. Use `/architecture` to check a change against the
 layers on both sides of the wire. Edit this section when the app deviates —
 the skill follows what is written here.
 
+## Synced models
+
+A model that crosses the wire is a twin pair: `lib/models/<stem>.dart` and
+`backend/models/<stem>.py`, tested on both sides. To add or change one, use
+`/sync-model`. It builds from the known-good `UserProfile` example and
+follows the test flavour in `.sync-model.json` (twinned tests, or shared
+`test_vectors/<stem>.json`). The sync-model hook reports drift after each edit.
+
 ## Complexity
 
 `scripts/complexity_sensor.py` plus `.complexity-baseline.json`. Use

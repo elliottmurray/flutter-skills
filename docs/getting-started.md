@@ -300,9 +300,22 @@ What it syncs, by default:
 - **Fields, normalized.** `emailAddress` ≡ `email_address`,
   `APP_STORE` ≡ `appStore`. Types are not compared — names are the contract.
 - **Tests by stem.** `test/<stem>_test.dart` ↔ `backend/tests/test_<stem>.py`.
+- **Test cases, by convention.** The Python test function name is the
+  slugified Dart test description: `test('round-trips through serialization')`
+  ↔ `test_round_trips_through_serialization`. Edit a test file and the nudge
+  lists cases only in Dart vs only in Python.
 
 The nudge is advisory. It never blocks an edit, and it stays quiet when a
 model has no counterpart — one-sided models are legal.
+
+To create a new pair, ask for one or run `/sync-model`. It builds both models
+and both test files from the shipped `UserProfile` example, starting with the
+same two cases — `constructs with valid fields` and `round-trips through
+serialization` — so the suites start equal. The test flavour is chosen in
+`/setup-project` or with `"tests"` in `.sync-model.json`: **intent** keeps
+hand-written cases twinned by name, and **shared** puts the cases once in
+`test_vectors/<stem>.json` for both suites to run. `/sync-model` also audits
+the whole project and is where you change the config as the app grows.
 
 ### Changing what is synced
 

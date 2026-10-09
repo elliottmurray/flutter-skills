@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Tiny stdlib tests for render.py helpers."""
 
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -185,6 +186,53 @@ class RenderTest(unittest.TestCase):
             )
             self.assertFalse((dest / "l10n.yaml").exists())
             self.assertFalse((dest / "lib" / "l10n").exists())
+
+    def _render_sync(self, dest: Path, flavour: str) -> int:
+        return render_main(
+            [
+                "--dest", str(dest),
+                "--app-name", "Demo",
+                "--bundle-id", "com.example.demo",
+                "--fastapi",
+                "--sync-model", flavour,
+            ]
+        )
+
+    def test_sync_model_intent_renders_twinned_tests(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            dest = Path(tmp)
+            self.assertEqual(self._render_sync(dest, "intent"), 0)
+            self.assertTrue((dest / "lib/models/user_profile.dart").is_file())
+            self.assertTrue((dest / "backend/models/user_profile.py").is_file())
+            dart_test = (dest / "test/models/user_profile_test.dart").read_text()
+            self.assertIn("package:demo/models/user_profile.dart", dart_test)
+            self.assertFalse((dest / "test_vectors").exists())
+            config = json.loads((dest / ".sync-model.json").read_text())
+            self.assertEqual(config, {"tests": "intent"})
+
+    def test_sync_model_shared_renders_vectors(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            dest = Path(tmp)
+            self.assertEqual(self._render_sync(dest, "shared"), 0)
+            vectors = json.loads((dest / "test_vectors/user_profile.json").read_text())
+            self.assertEqual(vectors["model"], "UserProfile")
+            self.assertTrue((dest / "test_vectors/vectors.schema.json").is_file())
+            self.assertTrue((dest / "test/support/test_vectors.dart").is_file())
+            self.assertTrue((dest / "backend/tests/vectors.py").is_file())
+            config = json.loads((dest / ".sync-model.json").read_text())
+            self.assertEqual(config, {"tests": "shared"})
+
+    def test_sync_model_needs_fastapi(self):
+        with tempfile.TemporaryDirectory() as tmp, self.assertRaises(SystemExit):
+            render_main(
+                [
+                    "--dest", tmp,
+                    "--app-name", "Demo",
+                    "--bundle-id", "com.example.demo",
+                    "--sync-model", "intent",
+                ]
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

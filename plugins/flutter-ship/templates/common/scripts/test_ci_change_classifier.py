@@ -122,6 +122,13 @@ class RelocatedLayoutTest(unittest.TestCase):
     def test_scripts_stay_at_the_repo_root(self):
         self.assertTrue(all(classify(["scripts/ci_change_classifier.py"]).values()))
 
+    def test_shared_vectors_run_both_unit_suites(self):
+        flags = classify(["test_vectors/user_profile.json"])
+        self.assertTrue(flags["flutter_unit"])
+        self.assertTrue(flags["python_unit"])
+        self.assertFalse(flags["flutter_integration"])
+        self.assertFalse(flags["python_complexity"])
+
 
 class LayoutTest(unittest.TestCase):
     def test_shipped_defaults(self):
