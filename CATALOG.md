@@ -8,6 +8,7 @@ What each skill does and whether it ships in this version.
 | `/tdd` | **Shipped** | standalone | Red-green-refactor for Flutter |
 | `/complexity` | **Shipped** | `/setup-project` | Report / ratchet / occasional hotspot pass. Sensor + PostToolUse hook |
 | `/sync-model` | **Shipped** | `/setup-project` | Audit Dart ↔ Python model drift and test-case parity; scaffold equal test cases on both sides; configure what is synced via `.sync-model.json`. PostToolUse hook included |
+| `/localization` | **Shipped** | `/setup-project` | gen-l10n setup, add a language (ARB + iOS plist), translate, audit drift. PostToolUse hook, parity test and CI staleness check included |
 | `/feature-flags` | **Shipped** | `/setup-project --firebase` | Add / graduate / delete registry flags; TestFlight `app_channel` condition |
 | `/flutter-sdk-check` | **Shipped** | `/setup-project` | Bump pinned `flutter-version` across workflows; stay in sync with the Monday Action |
 | `/pr-review` | **Shipped** | standalone | Generic rubric + keep `claude.yml`; danger areas from the app `CLAUDE.md` |
@@ -19,7 +20,7 @@ What each skill does and whether it ships in this version.
 | `/fastapi-setup` | **Shipped** | standalone | Expand the stub: uv, ruff, pytest, Docker optional |
 | `/verify` | **Shipped** | standalone | Generic VM Service driver (tap / eval / screenshot) |
 
-The complexity PostToolUse hook is advisory and stays quiet when the project has no sensor. The sync-model PostToolUse hook is advisory and stays quiet when a model has no counterpart on the other side or the test case sets already match. Pre-commit is a **git** hook, installed by `/setup-project`.
+The complexity PostToolUse hook is advisory and stays quiet when the project has no sensor. The sync-model PostToolUse hook is advisory and stays quiet when a model has no counterpart on the other side or the test case sets already match. The l10n parity PostToolUse hook is advisory and fires only on ARB files under a package with an `l10n.yaml`. Pre-commit is a **git** hook, installed by `/setup-project`.
 
 **Needs** is what must already exist for the skill to run. The `standalone`
 ones work on any Flutter repo; the rest expect templates that `/setup-project`

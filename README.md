@@ -63,6 +63,7 @@ Once this repo is on GitHub:
 | `/tdd` | Implemented — Flutter red-green-refactor |
 | `/complexity` | Implemented — report, ratchet, hotspot pass |
 | `/feature-flags` | Implemented — add / graduate / delete Remote Config flags |
+| `/localization` | Implemented — gen-l10n, add languages, keep translations in sync |
 | `/flutter-sdk-check` | Implemented — bump pinned `flutter-version` |
 | `/pr-review` | Implemented — risk rubric; `@claude` workflow unchanged |
 | `/architecture` | Implemented — layer review of the diff, Flutter + backend |
