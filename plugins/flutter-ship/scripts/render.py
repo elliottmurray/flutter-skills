@@ -5,7 +5,10 @@ Usage:
   render.py --dest PATH --app-name NAME --bundle-id ID [options]
 
 Always copies templates/common/. With --firebase / --fastapi / --l10n, also
-copies those overlay trees. Existing files are overwritten only with --force.
+copies those overlay trees. With --sync-model intent|shared (needs --fastapi),
+copies the UserProfile example from templates/sync-model/: the model pair, its
+tests in the chosen flavour, and a .sync-model.json recording that flavour.
+Existing files are overwritten only with --force.
 
 Files that do not decode as UTF-8 are copied byte-for-byte instead of being
 rendered; build detritus (`__pycache__`, `.pyc`, `.DS_Store`) is skipped.
@@ -20,6 +23,9 @@ from pathlib import Path
 
 PLUGIN_ROOT = Path(__file__).resolve().parent.parent
 TEMPLATES = PLUGIN_ROOT / "templates"
+
+# Test flavours for cross-language models; each is a dir under templates/sync-model/.
+SYNC_FLAVOURS = ("intent", "shared")
 
 DEFAULTS = {
     "FLUTTER_VERSION": "3.47.2",
@@ -126,8 +132,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--firebase", action="store_true")
     parser.add_argument("--fastapi", action="store_true")
     parser.add_argument("--l10n", action="store_true")
+    parser.add_argument("--sync-model", choices=SYNC_FLAVOURS, default=None)
     parser.add_argument("--force", action="store_true")
     args = parser.parse_args(argv)
+    if args.sync_model and not args.fastapi:
+        parser.error("--sync-model needs --fastapi: there is no backend to sync with")
 
     dest = args.dest.resolve()
     dest.mkdir(parents=True, exist_ok=True)
@@ -148,6 +157,10 @@ def main(argv: list[str] | None = None) -> int:
         written += copy_tree(TEMPLATES / "fastapi", dest, mapping, force=args.force)
     if args.l10n:
         written += copy_tree(TEMPLATES / "l10n", dest, mapping, force=args.force)
+    if args.sync_model:
+        sync = TEMPLATES / "sync-model"
+        written += copy_tree(sync / "common", dest, mapping, force=args.force)
+        written += copy_tree(sync / args.sync_model, dest, mapping, force=args.force)
 
     extra = PLUGIN_ROOT / "scripts" / "sim_driver.py"
     if extra.is_file():

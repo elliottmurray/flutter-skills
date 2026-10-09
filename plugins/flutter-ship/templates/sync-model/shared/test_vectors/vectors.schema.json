@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Cross-language model test vectors",
+  "description": "One file per model. The Dart and pytest suites both iterate over `cases`; neither side owns the expectations.",
+  "type": "object",
+  "required": ["model", "cases"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "model": { "type": "string", "description": "Class name, the same on both sides." },
+    "dart": { "type": "string", "description": "Repo-relative path of the Dart model." },
+    "python": { "type": "string", "description": "Repo-relative path of the Python model." },
+    "cases": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["description", "data", "valid"],
+        "properties": {
+          "description": {
+            "type": "string",
+            "description": "Becomes the test name on both sides. Unique within the file."
+          },
+          "data": { "type": "object", "description": "The JSON the model is decoded from." },
+          "valid": { "type": "boolean" },
+          "expected": {
+            "type": "object",
+            "description": "Valid cases only: the model's JSON after decoding. Defaults to `data`."
+          },
+          "error_field": {
+            "type": "string",
+            "description": "Invalid cases only: the one wire field that breaks. Each invalid case breaks exactly one field."
+          }
+        },
+        "if": { "properties": { "valid": { "const": false } } },
+        "then": { "required": ["error_field"], "not": { "required": ["expected"] } },
+        "else": { "not": { "required": ["error_field"] } },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

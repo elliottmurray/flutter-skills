@@ -72,6 +72,7 @@ Once this repo is on GitHub:
 | `/firebase-setup` | Implemented — console project, iOS app, RC `app_channel` |
 | `/app-check` | Implemented — DeviceCheck / App Attest, debug tokens |
 | `/fastapi-setup` | Implemented — uv, ruff, pytest, Docker optional |
+| `/sync-model` | Implemented — Dart ↔ Python model pairs, twinned tests or shared JSON vectors |
 | `/verify` | Implemented — generic VM Service tap / eval / screenshot |
 
 See [CATALOG.md](CATALOG.md) for what each skill does.

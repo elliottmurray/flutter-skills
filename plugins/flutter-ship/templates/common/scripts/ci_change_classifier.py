@@ -43,6 +43,8 @@ PYTHON_FULL = frozenset({"python_lint", "python_unit", "python_complexity"})
 COMPLEXITY_ONLY = frozenset({"flutter_complexity", "python_complexity"})
 ALL_FLAGS = frozenset(FLAG_NAMES)
 
+SHARED_VECTORS_DIR = "test_vectors"
+
 _DOC_SUFFIXES = {".md", ".markdown", ".rst"}
 _DOC_DIR_NAMES = {".agent", ".claude", ".cursor", ".vscode", "docs", "specs"}
 _DOC_FILENAMES = {
@@ -89,6 +91,8 @@ def _prefix_rules() -> tuple[tuple[str, frozenset[str]], ...]:
         rules.append((layout.join(pkg, layout.PYTHON_TEST_DIR), PYTHON_LINT_UNIT))
         rules.append((pkg, PYTHON_FULL))
     rules.append((".github", ALL_FLAGS))
+    # Cross-language test vectors (/sync-model shared flavour): both suites read them.
+    rules.append((SHARED_VECTORS_DIR, FLUTTER_LINT_UNIT | PYTHON_LINT_UNIT))
     rules.sort(key=lambda rule: len(rule[0]), reverse=True)
     return tuple(rules)
 

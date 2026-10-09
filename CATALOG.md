@@ -7,7 +7,7 @@ What each skill does and whether it ships in this version.
 | `/setup-project` | **Shipped** | — | Interview, `flutter create`, render templates, install git hook |
 | `/tdd` | **Shipped** | standalone | Red-green-refactor for Flutter |
 | `/complexity` | **Shipped** | `/setup-project` | Report / ratchet / occasional hotspot pass. Sensor + PostToolUse hook |
-| `/sync-model` | **Shipped** | `/setup-project` | Audit Dart ↔ Python model drift and test-case parity; scaffold equal test cases on both sides; configure what is synced via `.sync-model.json`. PostToolUse hook included |
+| `/sync-model` | **Shipped** | `/setup-project --fastapi` | Create Dart ↔ Python model pairs from the `UserProfile` example, starting from the standard case set; tests twinned by name (intent) or shared JSON vectors (shared); audit field and test-case drift; configure via `.sync-model.json`. PostToolUse hook included |
 | `/localization` | **Shipped** | `/setup-project` | gen-l10n setup, add a language (ARB + iOS plist), translate, audit drift. PostToolUse hook, parity test and CI staleness check included |
 | `/feature-flags` | **Shipped** | `/setup-project --firebase` | Add / graduate / delete registry flags; TestFlight `app_channel` condition |
 | `/flutter-sdk-check` | **Shipped** | `/setup-project` | Bump pinned `flutter-version` across workflows; stay in sync with the Monday Action |

@@ -1,0 +1,153 @@
+{
+  "$schema": "./vectors.schema.json",
+  "model": "UserProfile",
+  "dart": "lib/models/user_profile.dart",
+  "python": "backend/models/user_profile.py",
+  "cases": [
+    {
+      "description": "accepts a minimal profile",
+      "data": { "id": "u1", "display_name": "Ada", "email": "ada@example.com" },
+      "valid": true,
+      "expected": {
+        "id": "u1",
+        "display_name": "Ada",
+        "email": "ada@example.com",
+        "role": "member"
+      }
+    },
+    {
+      "description": "round-trips through serialization",
+      "data": {
+        "id": "u1",
+        "display_name": "Ada",
+        "email": "ada@example.com",
+        "age": 36,
+        "role": "admin"
+      },
+      "valid": true
+    },
+    {
+      "description": "trims display name",
+      "data": { "id": "u1", "display_name": "  Ada  ", "email": "ada@example.com" },
+      "valid": true,
+      "expected": {
+        "id": "u1",
+        "display_name": "Ada",
+        "email": "ada@example.com",
+        "role": "member"
+      }
+    },
+    {
+      "description": "trims and lowercases email",
+      "data": { "id": "u1", "display_name": "Ada", "email": " Ada@Example.COM " },
+      "valid": true,
+      "expected": {
+        "id": "u1",
+        "display_name": "Ada",
+        "email": "ada@example.com",
+        "role": "member"
+      }
+    },
+    {
+      "description": "counts display name length in characters",
+      "data": {
+        "id": "u1",
+        "display_name": "🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂",
+        "email": "ada@example.com",
+        "role": "member"
+      },
+      "valid": true
+    },
+    {
+      "description": "ignores unknown keys",
+      "data": {
+        "id": "u1",
+        "display_name": "Ada",
+        "email": "ada@example.com",
+        "legacy_id": 7
+      },
+      "valid": true,
+      "expected": {
+        "id": "u1",
+        "display_name": "Ada",
+        "email": "ada@example.com",
+        "role": "member"
+      }
+    },
+    {
+      "description": "omits null age from json",
+      "data": { "id": "u1", "display_name": "Ada", "email": "ada@example.com", "age": null },
+      "valid": true,
+      "expected": {
+        "id": "u1",
+        "display_name": "Ada",
+        "email": "ada@example.com",
+        "role": "member"
+      }
+    },
+    {
+      "description": "rejects missing id",
+      "data": { "display_name": "Ada", "email": "ada@example.com" },
+      "valid": false,
+      "error_field": "id"
+    },
+    {
+      "description": "rejects blank display name",
+      "data": { "id": "u1", "display_name": "   ", "email": "ada@example.com" },
+      "valid": false,
+      "error_field": "display_name"
+    },
+    {
+      "description": "rejects display name over 50 characters",
+      "data": {
+        "id": "u1",
+        "display_name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "email": "ada@example.com"
+      },
+      "valid": false,
+      "error_field": "display_name"
+    },
+    {
+      "description": "rejects email without at sign",
+      "data": { "id": "u1", "display_name": "Ada", "email": "ada.example.com" },
+      "valid": false,
+      "error_field": "email"
+    },
+    {
+      "description": "rejects age below 13",
+      "data": { "id": "u1", "display_name": "Ada", "email": "ada@example.com", "age": 12 },
+      "valid": false,
+      "error_field": "age"
+    },
+    {
+      "description": "rejects age above 130",
+      "data": { "id": "u1", "display_name": "Ada", "email": "ada@example.com", "age": 131 },
+      "valid": false,
+      "error_field": "age"
+    },
+    {
+      "description": "rejects age given as a string",
+      "data": { "id": "u1", "display_name": "Ada", "email": "ada@example.com", "age": "30" },
+      "valid": false,
+      "error_field": "age"
+    },
+    {
+      "description": "rejects fractional age",
+      "data": { "id": "u1", "display_name": "Ada", "email": "ada@example.com", "age": 30.5 },
+      "valid": false,
+      "error_field": "age"
+    },
+    {
+      "description": "rejects unknown role",
+      "data": { "id": "u1", "display_name": "Ada", "email": "ada@example.com", "role": "owner" },
+      "valid": false,
+      "error_field": "role"
+    },
+    {
+      "description": "rejects null role",
+      "data": { "id": "u1", "display_name": "Ada", "email": "ada@example.com", "role": null },
+      "valid": false,
+      "error_field": "role"
+    }
+  ]
+}

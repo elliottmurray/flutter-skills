@@ -26,6 +26,11 @@ Ask these in order. Do not invent extra questions.
    and App Check — treat both as yes unless they opt out.
 3. **Backend:** FastAPI (drop the thin template) / other (prompt only, no
    files) / none.
+   If FastAPI, **synced models:** how should Dart and Python models share
+   tests? **intent** (twinned hand-written tests, the default) / **shared**
+   (one JSON vector file both suites run) / later (`/sync-model`). Either
+   choice drops the `UserProfile` example pair as the pattern later models
+   follow. Say what each flavour means in one line, as in `/sync-model`.
 4. **iOS release CI now**, or later (`/ios-ci-setup`)? If now, ask for
    Apple Team ID if they have it; otherwise leave `YOUR_TEAM_ID`.
 5. **Self-hosted Mac runner now**, or later (`/self-hosted-runner`)? If now,
@@ -91,7 +96,8 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/render.py" \
 ```
 
 Add `--firebase` if they use Firebase. Add `--fastapi` if the backend is
-FastAPI. Add `--l10n` if they want localization.
+FastAPI. Add `--l10n` if they want localization. Add `--sync-model intent` or
+`--sync-model shared` for the synced models answer (it needs `--fastapi`).
 
 `render.py` copies `templates/common/` (and overlays), substitutes
 `{{PLACEHOLDERS}}`, and installs `scripts/pre-commit` as
@@ -164,6 +170,7 @@ Skills when you need them:
   /app-check             # DeviceCheck / App Attest + backend flag
   /fastapi-setup         # uv, ruff, pytest, optional Docker
   /localization          # add a language, audit translation drift
+  /sync-model            # add a Dart ↔ Python model pair from the UserProfile example
   /verify                # drive the simulator from Claude
   /complexity            # ratchet cyclomatic complexity
   /flutter-sdk-check     # bump the pinned Flutter version

@@ -308,10 +308,14 @@ What it syncs, by default:
 The nudge is advisory. It never blocks an edit, and it stays quiet when a
 model has no counterpart — one-sided models are legal.
 
-When you create a new pair, scaffold both test files with the same two cases
-— `constructs with valid fields` and `round-trips through serialization` — so
-the suites start equal. `/sync-model` audits the whole project and is where
-you change the config as the app grows.
+To create a new pair, ask for one or run `/sync-model`. It builds both models
+and both test files from the shipped `UserProfile` example, starting with the
+same two cases — `constructs with valid fields` and `round-trips through
+serialization` — so the suites start equal. The test flavour is chosen in
+`/setup-project` or with `"tests"` in `.sync-model.json`: **intent** keeps
+hand-written cases twinned by name, and **shared** puts the cases once in
+`test_vectors/<stem>.json` for both suites to run. `/sync-model` also audits
+the whole project and is where you change the config as the app grows.
 
 ### Changing what is synced
 
