@@ -1,0 +1,12 @@
+# gen-l10n config. `flutter gen-l10n` turns lib/l10n/*.arb into
+# AppLocalizations. Read docs/localization.md before changing anything here:
+# the parity test, the Claude hook and scripts/l10n_locales.py all assume
+# these paths.
+arb-dir: lib/l10n
+template-arb-file: app_en.arb
+output-localization-file: app_localizations.dart
+output-class: AppLocalizations
+output-dir: lib/l10n
+# English first, so an unsupported device language falls back to English
+# rather than to the first locale alphabetically.
+preferred-supported-locales: [en]

@@ -45,7 +45,7 @@ DEFAULT_PYTHON_PACKAGES = ("backend",)
 DART_SOURCE_DIRS = ("lib", "ios", "android")
 DART_TEST_DIR = "test"
 DART_INTEGRATION_DIR = "integration_test"
-DART_MANIFESTS = ("pubspec.yaml", "pubspec.lock")
+DART_MANIFESTS = ("pubspec.yaml", "pubspec.lock", "l10n.yaml")
 DART_LINT_CONFIG = ("analysis_options.yaml",)
 PYTHON_TEST_DIR = "tests"
 

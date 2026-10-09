@@ -31,6 +31,11 @@ Ask these in order. Do not invent extra questions.
 5. **Self-hosted Mac runner now**, or later (`/self-hosted-runner`)? If now,
    ask for the runner label (default suggestion: `app-runner`). If later,
    `runs-on` stays `macos-latest`.
+6. **Localization?** Will the app ship in more than English? If yes: **which
+   languages besides English?** Accept names or codes; you convert them to
+   ISO 639-1 codes (`fr`, `de`, `pt_BR`). "Yes, but English only for now"
+   still sets up the tooling, so adding a language later is one command. If
+   no, skip it: `/localization` can add it later.
 
 Defaults you may assume after they answer:
 
@@ -86,7 +91,7 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/render.py" \
 ```
 
 Add `--firebase` if they use Firebase. Add `--fastapi` if the backend is
-FastAPI.
+FastAPI. Add `--l10n` if they want localization.
 
 `render.py` copies `templates/common/` (and overlays), substitutes
 `{{PLACEHOLDERS}}`, and installs `scripts/pre-commit` as
@@ -104,6 +109,7 @@ Make the integration script executable:
 ```bash
 chmod +x scripts/pre-commit scripts/run_integration_tests.sh \
   scripts/complexity_sensor.py scripts/sim_driver.py
+[ -f scripts/l10n_locales.py ] && chmod +x scripts/l10n_locales.py
 ```
 
 ## 4b. Layout
@@ -117,6 +123,15 @@ If they ask for a nested app (`app/` + `api/`), do not hand-edit the tooling:
 write `.flutter-ship.json` at the repo root and `git mv` to match. See
 `docs/project-layout.md` in the rendered project. `release.yml` still
 hardcodes `ios/` and `build/` — update it in the same commit.
+
+## 4c. Localization
+
+Skip this if they said no to question 6. Otherwise follow
+`../localization/SKILL.md` § Set up, steps 3–6, using the languages from the
+interview. Step 2 (render) is already done. That means: add the dependencies,
+`l10n_locales.py setup`, `l10n_locales.py add <codes>`, translate every key,
+wire `MaterialApp`, then `flutter gen-l10n`, analyze and test. Do this before
+step 7, so `flutter test` there includes `test/l10n/`.
 
 ## 5. iOS bundle id
 
@@ -148,6 +163,7 @@ Skills when you need them:
   /firebase-setup        # console + Remote Config app_channel
   /app-check             # DeviceCheck / App Attest + backend flag
   /fastapi-setup         # uv, ruff, pytest, optional Docker
+  /localization          # add a language, audit translation drift
   /verify                # drive the simulator from Claude
   /complexity            # ratchet cyclomatic complexity
   /flutter-sdk-check     # bump the pinned Flutter version
@@ -157,6 +173,9 @@ Skills when you need them:
 
 If they chose iOS CI now, remind them `/ios-ci-setup` still has to put
 secrets in GitHub — this skill only wrote `release.yml`.
+
+If they chose localization, say the translations are machine drafts that a
+native speaker should review before release.
 
 If they chose a self-hosted runner now, remind them `/self-hosted-runner`
 still has to register the machine — this skill only set `runs-on`.

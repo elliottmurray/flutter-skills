@@ -33,6 +33,7 @@ walkthrough:
 | Backend | **FastAPI** |
 | iOS release CI now? | later |
 | Self-hosted runner now? | later |
+| Localization? | **no** (`/localization` adds it later) |
 
 Git has to be initialized first. `render.py` installs the pre-commit hook into
 `.git/hooks/`, and skips it silently when there is no `.git`.
@@ -432,6 +433,7 @@ Roughly in order, each one standalone:
 |---|---|
 | `/sync-model` | Audit and configure Dart ↔ Python model sync |
 | `/tdd` | Red-green-refactor for the next feature |
+| `/localization` | gen-l10n plus your languages; a hook and tests keep every ARB in step with English |
 | `/verify` | Drive the running simulator: tap, eval, screenshot |
 | `/fastapi-setup` | Docker, App Check on real routes |
 | `/firebase-setup` | The project, the iOS app, the `TestFlight` RC condition |
