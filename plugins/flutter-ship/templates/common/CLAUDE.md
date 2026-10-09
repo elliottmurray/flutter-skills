@@ -18,6 +18,14 @@ If this project uses Firebase Remote Config, read [docs/feature-flags.md](docs/f
 before adding a flag. The registry in `lib/config/flag_registry.dart` is
 authoritative. Use `/feature-flags` to add, graduate, or delete a flag.
 
+## Localization
+
+If this project has an `l10n.yaml`, read [docs/localization.md](docs/localization.md)
+before changing any user-visible text. English (`lib/l10n/app_en.arb`) is the
+template. Every key added, removed or reworded there changes every other
+`app_<lang>.arb` in the same edit, translated. Run `flutter gen-l10n` and commit
+the generated files. Use `/localization` to add a language or audit drift.
+
 ## iOS releases
 
 CI builds a signed IPA on the Release workflow. Use `/ios-ci-setup` for
@@ -59,6 +67,7 @@ Treat these as high risk until this list is edited for the app:
 
 - `/tdd` — already available
 - `/feature-flags` — add / graduate / delete Remote Config flags
+- `/localization` — set up gen-l10n, add a language, audit translation drift
 - `/complexity` — report and ratchet cyclomatic complexity
 - `/flutter-sdk-check` — bump the pinned Flutter version
 - `/pr-review` — review a PR against the danger areas above

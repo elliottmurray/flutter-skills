@@ -82,6 +82,23 @@ jobs:
         working-directory: ${{ needs.classify.outputs.dart_dir }}
         run: flutter analyze
 
+      # The generated AppLocalizations are committed. Regenerate and fail if
+      # they differ, so an ARB edit can't land without `flutter gen-l10n`.
+      - name: Localizations up to date
+        if: env.RUN_LINT == 'true'
+        working-directory: ${{ needs.classify.outputs.dart_dir }}
+        run: |
+          if [ ! -f l10n.yaml ]; then
+            echo "No l10n.yaml; skipping."
+            exit 0
+          fi
+          flutter gen-l10n
+          if [ -n "$(git status --porcelain -- lib)" ]; then
+            git status --short -- lib
+            echo "::error::Generated localizations are stale. Run 'flutter gen-l10n' and commit the result."
+            exit 1
+          fi
+
       - name: Install dart_code_linter (isolated)
         if: env.RUN_COMPLEXITY == 'true'
         continue-on-error: true

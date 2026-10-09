@@ -1,5 +1,5 @@
 {
-  "description": "Advisory nudges after Dart/Python edits: complexity ceiling and cross-language model sync. Quiet when nothing applies.",
+  "description": "Advisory nudges after Dart/Python edits: complexity ceiling, cross-language model sync, and translation (ARB) parity. Quiet when nothing applies.",
   "hooks": {
     "PostToolUse": [
       {
@@ -21,6 +21,17 @@
             "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/sync_model_hook.py\"",
             "timeout": 20,
             "statusMessage": "Checking model sync..."
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/l10n_parity_hook.py\"",
+            "timeout": 15,
+            "statusMessage": "Checking translation parity..."
           }
         ]
       }

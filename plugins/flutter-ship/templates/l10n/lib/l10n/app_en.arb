@@ -1,0 +1,7 @@
+{
+  "@@locale": "en",
+  "appTitle": "{{APP_NAME}}",
+  "@appTitle": {
+    "description": "The app's name, used by MaterialApp.onGenerateTitle. A brand name: the same in every language."
+  }
+}

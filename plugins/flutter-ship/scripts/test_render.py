@@ -145,5 +145,46 @@ class RenderTest(unittest.TestCase):
             registry = (dest / "lib" / "config" / "flag_registry.dart").read_text()
             self.assertIn("DISABLE_FIREBASE_APP_CHECK", registry)
 
+    def test_l10n_overlay_seeds_english_and_the_tooling(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            dest = Path(tmp) / "app"
+            dest.mkdir()
+            rc = render_main(
+                [
+                    "--dest",
+                    str(dest),
+                    "--app-name",
+                    "My Demo",
+                    "--bundle-id",
+                    "com.example.demo",
+                    "--l10n",
+                ]
+            )
+            self.assertEqual(rc, 0)
+            self.assertIn("arb-dir: lib/l10n", (dest / "l10n.yaml").read_text())
+            arb = (dest / "lib" / "l10n" / "app_en.arb").read_text()
+            self.assertIn('"appTitle": "My Demo"', arb)
+            self.assertIn(
+                "package:my_demo/l10n/app_localizations.dart",
+                (dest / "lib" / "l10n" / "l10n.dart").read_text(),
+            )
+            for rel in (
+                "test/l10n/arb_parity_test.dart",
+                "test/l10n/l10n_test.dart",
+                "scripts/l10n_locales.py",
+                "docs/localization.md",
+            ):
+                self.assertTrue((dest / rel).is_file(), rel)
+
+    def test_no_l10n_files_without_the_flag(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            dest = Path(tmp) / "app"
+            dest.mkdir()
+            render_main(
+                ["--dest", str(dest), "--app-name", "Demo", "--bundle-id", "com.example.demo"]
+            )
+            self.assertFalse((dest / "l10n.yaml").exists())
+            self.assertFalse((dest / "lib" / "l10n").exists())
+
 if __name__ == "__main__":
     unittest.main()

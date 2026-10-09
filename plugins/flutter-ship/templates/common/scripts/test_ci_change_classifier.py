@@ -77,6 +77,11 @@ class DefaultLayoutTest(unittest.TestCase):
         flags = classify(["pubspec.yaml"])
         self.assertTrue(flags["flutter_integration"])
 
+    def test_l10n_config_runs_full_flutter(self):
+        flags = classify(["l10n.yaml"])
+        self.assertTrue(flags["flutter_unit"])
+        self.assertTrue(flags["flutter_lint"])
+
     def test_analysis_options_is_lint_only(self):
         flags = classify(["analysis_options.yaml"])
         self.assertTrue(flags["flutter_lint"])
