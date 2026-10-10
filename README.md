@@ -1,16 +1,20 @@
 # flutter-skills
 
-A Claude Code marketplace with one plugin, **flutter-ship**. Install it, then
-run `/setup-project` in an empty directory (or a new Flutter repo) to get CI,
-lint, unit tests, a complexity ratchet, and an iOS integration-test harness
-so the next thing you write is a test, not a workflow.
+A Claude Code marketplace with one plugin, **flutter-ship**. It is for a
+Flutter iOS app with an optional FastAPI backend, and it works on the repo
+itself: it writes CI workflows and config, installs hooks that watch your
+edits, and walks the Apple and Firebase consoles with you.
+
+Run `/setup-project` in an empty directory (or a new Flutter repo) and you get
+CI, lint, unit tests, a complexity ratchet and an iOS integration-test harness
+before you write any app code.
 
 New here? [docs/getting-started.md](docs/getting-started.md) goes from an empty
 directory to a Flutter app calling its own FastAPI backend on the simulator,
 and explains where the Firebase credentials go on each side.
 
-Cursor can consume the same `SKILL.md` files later. This first ship is
-Claude Code only.
+This first version is Claude Code only. The `SKILL.md` files are plain
+Markdown, so Cursor could use them later.
 
 ## Requirements
 
@@ -28,82 +32,94 @@ Shipping to TestFlight or the App Store also needs a paid **Apple Developer
 Program** membership and an **Admin** or **Account Holder** role on the team.
 A free Apple ID cannot create a distribution certificate, an App Store
 provisioning profile, or an App Store Connect API key, so `/ios-ci-setup`
-stops early without one. Everything else — tests, lint, complexity,
-the simulator — works without paying Apple.
+stops early without one. Tests, lint, complexity and the simulator all work
+without paying Apple.
 
-### Browsers are optional
+### Chrome is optional
 
-`/ios-ci-setup`, `/firebase-setup` and `/app-check` walk cloud consoles. With
-the Claude in Chrome extension installed, and permission granted for
-`developer.apple.com`, `appstoreconnect.apple.com` and
-`console.firebase.google.com`, Claude drives those pages. Without it each
-skill falls back to naming the page and the button and waiting for you —
-slower, same result. Either way you sign in and clear 2FA yourself; Claude
-never handles your Apple or Google credentials.
+`/ios-ci-setup`, `/firebase-setup` and `/app-check` do most of their work in
+the Apple and Firebase web consoles. With the Claude in Chrome extension
+connected (`claude --chrome`), Claude clicks through those pages in your own
+Chrome window while you watch and confirm each create. Without it, Claude
+names the page and the button and waits for you. You sign in and clear 2FA
+yourself either way. Claude never sees your Apple or Google password.
+
+[docs/chrome.md](docs/chrome.md) covers setup, which sites to allow, what a
+run looks like, and which steps stay with you.
 
 ## Install
 
 ```text
-/plugin marketplace add /path/to/flutter-skills
+/plugin marketplace add elliottmurray/flutter-skills
 /plugin install flutter-ship@flutter-skills
 ```
 
-Once this repo is on GitHub:
-
-```text
-/plugin marketplace add <github-org-or-user>/flutter-skills
-/plugin install flutter-ship@flutter-skills
-```
+From a local checkout, use `/plugin marketplace add /path/to/flutter-skills`.
 
 ## What you get
 
-| Skill | Status |
+Skills you use while building the app:
+
+| Skill | What it does |
 |---|---|
-| `/setup-project` | Implemented — interview, `flutter create`, templates, pre-commit |
-| `/tdd` | Implemented — Flutter red-green-refactor |
-| `/complexity` | Implemented — report, ratchet, hotspot pass |
-| `/feature-flags` | Implemented — add / graduate / delete Remote Config flags |
-| `/localization` | Implemented — gen-l10n, add languages, keep translations in sync |
-| `/flutter-sdk-check` | Implemented — bump pinned `flutter-version` |
-| `/pr-review` | Implemented — risk rubric; `@claude` workflow unchanged |
-| `/architecture` | Implemented — layer review of the diff, Flutter + backend |
-| `/ios-ci-setup` | Implemented — Apple certs, profiles, GitHub secrets |
-| `/self-hosted-runner` | Implemented — LaunchAgent runner, swap `runs-on` |
-| `/firebase-setup` | Implemented — console project, iOS app, RC `app_channel` |
-| `/app-check` | Implemented — DeviceCheck / App Attest, debug tokens |
-| `/fastapi-setup` | Implemented — uv, ruff, pytest, Docker optional |
-| `/sync-model` | Implemented — Dart ↔ Python model pairs, twinned tests or shared JSON vectors |
-| `/verify` | Implemented — generic VM Service tap / eval / screenshot |
+| `/setup-project` | Interview, `flutter create`, render templates, install the pre-commit hook |
+| `/tdd` | Test-first loop for Flutter and pytest: failing test, make it pass, tidy, repeat |
+| `/architecture` | Reviews the diff against MVVM + repository layers, and the client/API contract |
+| `/sync-model` | Dart ↔ Python model pairs, with twinned tests or shared JSON vectors. A hook flags drift as you edit |
+| `/localization` | gen-l10n, add languages (ARB + iOS plist), translate. A hook and a test keep ARBs in step with English |
+| `/complexity` | Report, ratchet and hotspot pass. A hook warns as you edit |
+| `/verify` | Drive the running simulator over the VM Service: tap, eval, screenshot |
+| `/fastapi-setup` | Expand the backend stub: uv, ruff, pytest, optional Docker |
 
-See [CATALOG.md](CATALOG.md) for what each skill does.
+Skills you use to ship it:
 
-## Alongside the official plugins
-
-The Flutter team ships [flutter/agent-plugins](https://github.com/flutter/agent-plugins),
-which also pulls in [dart-lang/skills](https://github.com/dart-lang/skills).
-Feel free to use both: they cover the build side of flutter. This is complimentary and focused more on the release or shipping.
-
-| | Covers |
+| Skill | What it does |
 |---|---|
-| **flutter/agent-plugins** + **dart-lang/skills** | How to write Flutter and Dart — layout fixes, responsive layouts, `go_router`, localization, JSON, widget previews, pattern matching, coverage, FFI |
-| **flutter-ship** | How to ship it on iOS — signing, TestFlight, Firebase, App Check, flags, CI, a complexity ratchet, review gates, a backend |
+| `/ios-ci-setup` | Apple certs, profiles and API key, then the GitHub secrets for `release.yml` |
+| `/firebase-setup` | Firebase project, iOS app, Remote Config `app_channel` condition |
+| `/app-check` | App Attest / DeviceCheck, debug tokens, backend enforcement |
+| `/feature-flags` | Add, graduate and delete Remote Config flags |
+| `/pr-review` | Risk rubric for PRs, alongside the `@claude` workflow |
+| `/flutter-sdk-check` | Bump the pinned `flutter-version` across workflows |
+| `/self-hosted-runner` | Run the Mac CI jobs on a Mac you own instead of `macos-latest` |
 
-Those skills are generated from docs.flutter.dev, so they are stateless
-technique: they never touch your repo's config or a cloud console. Nothing
-there covers CI, code signing, App Store Connect, Remote Config, or App Check,
-and their integration-test skill targets Chrome, Android and Firebase Test Lab
-— not iOS.
+[CATALOG.md](CATALOG.md) lists what each skill needs before it will run.
 
-Three skills sit close enough to need a word:
+## How this differs from the official Flutter plugin
 
-| Reach for | When |
-|---|---|
-| `flutter-apply-architecture-best-practices` | Building a new feature from scratch |
-| `/architecture` | Reviewing what changed, including the client/API contract |
-| `flutter-add-integration-test` | Driving the app through the Dart/Flutter MCP server |
-| `/verify` | No MCP server, or you need `simctl` screenshots, backgrounding, relaunch by bundle id |
-| `dart-add-unit-test`, `flutter-add-widget-test` | Test file layout, `package:test` idiom, mocks |
-| `/tdd` | Red-green-refactor as a process, and pytest for the backend |
+The Flutter team ships [flutter/agent-plugins](https://github.com/flutter/agent-plugins)
+(the `dart-flutter` plugin). It bundles the Dart MCP server and the
+[dart-lang/skills](https://github.com/dart-lang/skills) set, generated from
+docs.flutter.dev. Use both. They don't conflict.
+
+The split is roughly this. The official skills teach Claude how to write
+Flutter and Dart code: layout fixes, responsive layouts, `go_router`, JSON
+serialization, widget previews, pattern matching, coverage, FFI. They are
+technique and work the same in any Flutter project. They don't change your
+project config, add hooks, or touch a cloud console.
+
+flutter-ship is about one kind of project, a Flutter iOS app with an optional
+Python backend, and it changes that project. It writes the CI workflows and
+`analysis_options.yaml`, installs a pre-commit hook and three edit hooks
+(complexity, model sync, ARB parity), and keeps them working. It also helps
+while you build, but at the level of workflow and project rules rather than
+Dart idiom: a test-first loop, a layer review of your diff, Dart and Python
+models kept in step. And it covers the release side the official plugin
+leaves out: signing, TestFlight, Firebase, App Check, Remote Config.
+
+Where the two overlap:
+
+| Official skill | flutter-ship | Use the official one for | Use flutter-ship for |
+|---|---|---|---|
+| `flutter-apply-architecture-best-practices` | `/architecture` | Designing a new feature | Reviewing what changed, including the backend contract |
+| `flutter-setup-localization` | `/localization` | How gen-l10n works | Adding languages with the iOS plist entries, and the parity hook and CI check |
+| `flutter-implement-json-serialization` | `/sync-model` | `fromJson`/`toJson` on the Dart side | Keeping a Dart model and its Python twin in step, tests included |
+| `flutter-add-integration-test` | `/verify` | Driving the app through the Dart MCP server | No MCP server, or you need `simctl` screenshots, backgrounding, relaunch by bundle id |
+| `dart-add-unit-test`, `flutter-add-widget-test` | `/tdd` | Test file layout, `package:test` idiom, mocks | The order you work in, plus pytest for the backend |
+
+`/tdd` defers to the official test skills for the mechanics when they're
+installed. The official integration-test skill targets Chrome, Android and
+Firebase Test Lab, not the iOS Simulator.
 
 ## After `/setup-project`
 

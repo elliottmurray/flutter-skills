@@ -5,7 +5,7 @@ What each skill does and whether it ships in this version.
 | Skill | Status | Needs | What it does |
 |---|---|---|---|
 | `/setup-project` | **Shipped** | — | Interview, `flutter create`, render templates, install git hook |
-| `/tdd` | **Shipped** | standalone | Red-green-refactor for Flutter |
+| `/tdd` | **Shipped** | standalone | Test-first loop for Flutter and pytest: failing test, make it pass, tidy, repeat. Not strict red-green-refactor; the skill says how it differs |
 | `/complexity` | **Shipped** | `/setup-project` | Report / ratchet / occasional hotspot pass. Sensor + PostToolUse hook |
 | `/sync-model` | **Shipped** | `/setup-project --fastapi` | Create Dart ↔ Python model pairs from the `UserProfile` example, starting from the standard case set; tests twinned by name (intent) or shared JSON vectors (shared); audit field and test-case drift; configure via `.sync-model.json`. PostToolUse hook included |
 | `/localization` | **Shipped** | `/setup-project` | gen-l10n setup, add a language (ARB + iOS plist), translate, audit drift. PostToolUse hook, parity test and CI staleness check included |
@@ -32,8 +32,7 @@ GitHub repo with Actions enabled — see [Requirements](README.md#requirements).
 The account rows above are the ones you cannot fix from this Mac: a free Apple
 ID cannot issue the certificates and keys `/ios-ci-setup` and `/app-check`
 need. The three console skills drive Chrome when the Claude in Chrome extension
-is installed and permitted for that domain, and fall back to a spoken checklist
-when it is not.
+is connected and allowed on that site, and otherwise tell you what to click and
+wait. See [docs/chrome.md](docs/chrome.md).
 
-See the README for how these sit alongside
-[flutter/agent-plugins](https://github.com/flutter/agent-plugins).
+The README explains [how this differs from the official Flutter plugin](README.md#how-this-differs-from-the-official-flutter-plugin).
