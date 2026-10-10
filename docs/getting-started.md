@@ -29,7 +29,7 @@ walkthrough:
 | Question | Answer |
 |---|---|
 | App name / bundle id | `Hello Ship` / `com.example.helloship` |
-| Firebase? | **no** (section 7 covers adding it) |
+| Firebase? | **no** (section 8 covers adding it) |
 | Backend | **FastAPI** |
 | iOS release CI now? | later |
 | Self-hosted runner now? | later |
@@ -71,7 +71,7 @@ curl -s localhost:8000/health
 
 `sample.env` sets `FIREBASE_APP_CHECK_ENABLED=false`, so the service never
 touches Firebase. That is the whole reason this step needs no credentials.
-Section 7 explains what changes when you flip it.
+Section 8 explains what changes when you flip it.
 
 ## 4. Add the hello endpoint
 
@@ -445,12 +445,12 @@ Roughly in order, each one standalone:
 | Skill | What it unblocks |
 |---|---|
 | `/sync-model` | Audit and configure Dart ↔ Python model sync |
-| `/tdd` | Red-green-refactor for the next feature |
+| `/tdd` | Test-first loop for the next feature |
 | `/localization` | gen-l10n plus your languages; a hook and tests keep every ARB in step with English |
 | `/verify` | Drive the running simulator: tap, eval, screenshot |
 | `/fastapi-setup` | Docker, App Check on real routes |
-| `/firebase-setup` | The project, the iOS app, the `TestFlight` RC condition |
-| `/app-check` | App Attest, DeviceCheck, debug tokens, then section 7 |
+| `/firebase-setup` | The project, the iOS app, the `TestFlight` RC condition. Faster with Chrome connected, see [chrome.md](chrome.md) |
+| `/app-check` | App Attest, DeviceCheck, debug tokens, then section 8 |
 | `/feature-flags` | Remote Config flags with a beta-only tier |
 | `/ios-ci-setup` | Signing secrets. Needs the paid Apple account |
 | `/self-hosted-runner` | Move the Mac jobs off `macos-latest` billing |
