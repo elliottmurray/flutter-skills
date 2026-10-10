@@ -13,8 +13,13 @@
 ## Testing
 
 - [ ] `render.py` smoke test
-- [ ] Unit tests (`plugins/flutter-ship/scripts/test_render.py` or other)
+- [ ] Unit tests (`scripts/test_render.py` or other)
 - [ ] N/A
+
+## Release
+
+- [ ] Bumps `version` in `plugin.json` (merging this PR ships a release; see `docs/releasing.md`)
+- [ ] No release; batching into a later bump
 
 ## Skill status
 

@@ -63,7 +63,7 @@ _SHARED_EXACT_RULES: dict[str, frozenset[str]] = {
     "scripts/complexity_sensor.py": COMPLEXITY_ONLY,
     "scripts/compute_release_tag.py": COMPLEXITY_ONLY,
     "scripts/ci_integration_green.py": COMPLEXITY_ONLY,
-    ".flutter-ship.json": ALL_FLAGS,
+    ".lastmile.json": ALL_FLAGS,
     ".complexity-baseline.json": COMPLEXITY_ONLY,
     ".github/workflows/flutter.yml": frozenset(
         {"flutter_lint", "flutter_unit", "flutter_complexity"}

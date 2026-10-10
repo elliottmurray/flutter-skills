@@ -1,0 +1,83 @@
+name: Plugin release
+
+# A release is a merge to main that changes `version` in plugin.json.
+# This tags it, cuts a GitHub release, and fast-forwards the `release`
+# branch, which Anthropic's directory tracks. Merges that don't bump the
+# version reach nobody: marketplace users compare versions, and the
+# directory only sees `release`.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .claude-plugin/plugin.json
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: plugin-release
+  cancel-in-progress: false
+
+env:
+  CLAUDE_CODE_VERSION: 2.1.296
+  PLUGIN_DIR: .
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Claude Code CLI
+        run: npm install -g "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}"
+
+      - name: Read version
+        id: version
+        run: |
+          version=$(python3 scripts/plugin_preflight.py --version)
+          tag="lastmile--v${version}"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::$tag already exists; nothing to release"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Validate
+        if: steps.version.outputs.exists == 'false'
+        run: |
+          claude plugin validate --strict .
+          claude plugin validate --strict .claude-plugin/plugin.json
+          python3 scripts/plugin_preflight.py
+
+      - name: Tag
+        if: steps.version.outputs.exists == 'false'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          claude plugin tag "$PLUGIN_DIR" --push -m "lastmile %s"
+
+      - name: GitHub release
+        if: steps.version.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ steps.version.outputs.tag }}" \
+            --title "lastmile ${{ steps.version.outputs.version }}" \
+            --generate-notes
+
+      - name: Advance release branch
+        if: steps.version.outputs.exists == 'false'
+        # Fast-forward only. If `release` has diverged from main this fails
+        # rather than overwrite it; see docs/releasing.md.
+        run: git push origin "HEAD:refs/heads/release"

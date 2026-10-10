@@ -1,6 +1,8 @@
-# flutter-skills
+# lastmile
 
-A Claude Code marketplace with one plugin, **flutter-ship**. Install it, then
+A Claude Code plugin, and the marketplace that serves it, for the last mile
+of a Flutter iOS app: everything between "it runs on my simulator" and
+"it's on TestFlight". Install it, then
 run `/setup-project` in an empty directory (or a new Flutter repo) to get CI,
 lint, unit tests, a complexity ratchet, and an iOS integration-test harness
 so the next thing you write is a test, not a workflow.
@@ -44,16 +46,21 @@ never handles your Apple or Google credentials.
 ## Install
 
 ```text
-/plugin marketplace add /path/to/flutter-skills
-/plugin install flutter-ship@flutter-skills
+/plugin install lastmile --marketplace elliottmurray/lastmile
 ```
 
-Once this repo is on GitHub:
+That adds this repo as a marketplace and installs the plugin in one step
+(Claude Code 2.1.275 or later). On older versions:
 
 ```text
-/plugin marketplace add <github-org-or-user>/flutter-skills
-/plugin install flutter-ship@flutter-skills
+/plugin marketplace add elliottmurray/lastmile
+/plugin install lastmile@lastmile
 ```
+
+To work on the plugin from a clone, point the marketplace at the path:
+`/plugin marketplace add /path/to/lastmile`.
+
+Releases and the Anthropic directory listing: [docs/releasing.md](docs/releasing.md).
 
 ## What you get
 
@@ -86,7 +93,7 @@ Feel free to use both: they cover the build side of flutter. This is complimenta
 | | Covers |
 |---|---|
 | **flutter/agent-plugins** + **dart-lang/skills** | How to write Flutter and Dart — layout fixes, responsive layouts, `go_router`, localization, JSON, widget previews, pattern matching, coverage, FFI |
-| **flutter-ship** | How to ship it on iOS — signing, TestFlight, Firebase, App Check, flags, CI, a complexity ratchet, review gates, a backend |
+| **lastmile** | How to ship it on iOS — signing, TestFlight, Firebase, App Check, flags, CI, a complexity ratchet, review gates, a backend |
 
 Those skills are generated from docs.flutter.dev, so they are stateless
 technique: they never touch your repo's config or a cloud console. Nothing
@@ -104,6 +111,31 @@ Three skills sit close enough to need a word:
 | `/verify` | No MCP server, or you need `simctl` screenshots, backgrounding, relaunch by bundle id |
 | `dart-add-unit-test`, `flutter-add-widget-test` | Test file layout, `package:test` idiom, mocks |
 | `/tdd` | Red-green-refactor as a process, and pytest for the backend |
+
+## What it runs on your machine
+
+**Hooks.** Three `PostToolUse` hooks run after Claude edits a file. Each is a
+local `python3` script in `hooks/` that reads the edited file and files in
+your project, prints an advisory message, and always exits 0. They make no
+network calls and write nothing.
+
+- `complexity_sensor_hook.py` runs your project's own
+  `scripts/complexity_sensor.py` (copied in by `/setup-project`) on Dart and
+  Python edits. Quiet if that script is absent.
+- `sync_model_hook.py` warns when a Dart or Python model changes without its
+  twin.
+- `l10n_parity_hook.py` warns when ARB translation files drift apart.
+
+**Scripts.** `scripts/render.py` copies `templates/` into your project when
+`/setup-project` runs. `scripts/sim_driver.py` drives the app for `/verify`
+by talking to the Dart VM Service on `localhost`.
+
+**Commands the skills ask Claude to run.** `flutter`, `xcrun simctl`, `gh`
+(for repository secrets and workflows, with confirmation first), `uv`, and
+`git`. Skills that set up Apple or Firebase walk you through their web
+consoles. Claude never handles your Apple or Google passwords.
+
+The plugin sends no data anywhere itself.
 
 ## After `/setup-project`
 

@@ -85,7 +85,7 @@ refactoring first.
   landed) run `--check` with `continue-on-error: true`. Flip to blocking
   by deleting that line once the baseline has settled. The change
   classifier skips the step on docs-only diffs.
-- **Live nudge.** flutter-ship installs a PostToolUse hook that warns
+- **Live nudge.** lastmile installs a PostToolUse hook that warns
   after an `.dart` / `.py` edit that leaves a function over its ceiling.
   Advisory only; it never blocks.
 

@@ -1,0 +1,56 @@
+name: Plugin CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  # Bump deliberately; `claude plugin validate` rules change between releases.
+  CLAUDE_CODE_VERSION: 2.1.296
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Claude Code CLI
+        run: npm install -g "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}"
+
+      - name: Validate marketplace
+        run: claude plugin validate --strict .
+
+      - name: Validate plugin
+        run: claude plugin validate --strict .claude-plugin/plugin.json
+
+      - name: Directory preflight
+        run: |
+          base=""
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            base="--base origin/${{ github.base_ref }}"
+          fi
+          python scripts/plugin_preflight.py $base
+
+      - name: Unit tests
+        run: |
+          set -e
+          for dir in hooks scripts templates/common/scripts templates/l10n/scripts; do
+            echo "::group::$dir"
+            (cd "$dir" && PYTHONPATH="$GITHUB_WORKSPACE/templates/common/scripts" \
+              python -m unittest discover -p 'test_*.py')
+            echo "::endgroup::"
+          done
