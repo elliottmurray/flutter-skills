@@ -173,6 +173,19 @@ class CheckTest(unittest.TestCase):
             _quiet(l10n.cmd_add, pkg, ["fr"])
             self.assertEqual(l10n.parity_problems(pkg), [])
 
+    def test_one_word_select_branches_are_not_drift(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            pronoun = "{gender, select, male{he} female{she} other{they}}"
+            pkg = _package(Path(tmp))
+            en = {**EN, "pronoun": pronoun}
+            (pkg / "lib/l10n/app_en.arb").write_text(json.dumps(en))
+            _quiet(l10n.cmd_add, pkg, ["fr"])
+            fr_path = pkg / "lib/l10n/app_fr.arb"
+            fr = json.loads(fr_path.read_text())
+            fr["pronoun"] = "{gender, select, male{il} female{elle} other{iel}}"
+            fr_path.write_text(json.dumps(fr))
+            self.assertEqual(l10n.parity_problems(pkg), [])
+
     def test_reports_key_placeholder_and_plist_drift(self):
         with tempfile.TemporaryDirectory() as tmp:
             pkg = _package(Path(tmp), fr={"@@locale": "fr", "greeting": "Salut {nom}", "x": "y"})

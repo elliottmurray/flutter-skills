@@ -102,6 +102,39 @@ class PlaceholderTest(unittest.TestCase):
     def test_metadata_values_are_ignored(self):
         self.assertEqual(hook.placeholders({"placeholders": {}}), set())
 
+    def test_one_word_select_branches_are_text(self):
+        en = "{gender, select, male{he} female{she} other{they}}"
+        fr = "{gender, select, male{il} female{elle} other{iel}}"
+        self.assertEqual(hook.placeholders(en), {"gender"})
+        self.assertEqual(hook.placeholders(fr), {"gender"})
+
+    def test_one_word_plural_branches_are_text(self):
+        message = "{count, plural, =0{none} =1{one} other{{count} items}}"
+        self.assertEqual(hook.placeholders(message), {"count"})
+
+    def test_placeholders_inside_branches_count(self):
+        message = "Hi {name}, {n, plural, =1{one from {sender}} other{{n} new}}"
+        self.assertEqual(hook.placeholders(message), {"name", "n", "sender"})
+
+    def test_formatted_arguments(self):
+        self.assertEqual(
+            hook.placeholders("{amount, number, currency} on {day, date}"),
+            {"amount", "day"},
+        )
+
+    def test_placeholders_next_to_non_latin_text(self):
+        self.assertEqual(hook.placeholders("こんにちは{name}さん"), {"name"})
+
+    def test_malformed_messages_do_not_raise(self):
+        self.assertEqual(hook.placeholders("{oops"), set())
+        self.assertEqual(hook.placeholders("{n, plural, other{x}"), {"n"})
+        self.assertEqual(hook.placeholders("a } then {name}"), {"name"})
+
+    def test_select_translation_is_in_sync(self):
+        en = {"pronoun": "{gender, select, male{he} female{she} other{they}}"}
+        fr = {"pronoun": "{gender, select, male{il} female{elle} other{iel}}"}
+        self.assertEqual(hook.locale_problems("app_fr.arb", en, fr), [])
+
 
 class ConfigTest(unittest.TestCase):
     def test_reads_arb_dir_and_template_from_l10n_yaml(self):
