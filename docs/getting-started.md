@@ -13,8 +13,8 @@ there is for shipping, not for this walkthrough.
 ## 1. Install the plugin
 
 ```text
-/plugin marketplace add elliottmurray/flutter-skills
-/plugin install flutter-ship@flutter-skills
+/plugin marketplace add elliottmurray/lastmile
+/plugin install lastmile@lastmile
 ```
 
 ## 2. Run `/setup-project`

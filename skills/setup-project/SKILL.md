@@ -3,7 +3,7 @@ name: setup-project
 description: >
   Bootstrap a Flutter iOS project with CI, lint, unit tests, a complexity
   ratchet, and an integration-test harness. Use when the user wants to start
-  a new Flutter app, run /setup-project, or install flutter-ship templates
+  a new Flutter app, run /setup-project, or install lastmile templates
   into an empty or new repo.
 user_invocable: true
 ---
@@ -126,7 +126,7 @@ truth for both, and the classifier, complexity sensor, pre-commit hook,
 integration runner and workflows all read it.
 
 If they ask for a nested app (`app/` + `api/`), do not hand-edit the tooling:
-write `.flutter-ship.json` at the repo root and `git mv` to match. See
+write `.lastmile.json` at the repo root and `git mv` to match. See
 `docs/project-layout.md` in the rendered project. `release.yml` still
 hardcodes `ios/` and `build/` — update it in the same commit.
 

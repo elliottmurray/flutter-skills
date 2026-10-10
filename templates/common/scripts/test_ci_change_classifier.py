@@ -16,7 +16,7 @@ def layout_of(*, dart: str, python: str):
     """Run a block with the layout pinned, caches cleared either way.
 
     Every test pins a layout explicitly, so the suite passes whether or not
-    this project has a `.flutter-ship.json` of its own.
+    this project has a `.lastmile.json` of its own.
     """
     previous = {
         "FLUTTER_SHIP_DART_PACKAGES": os.environ.get("FLUTTER_SHIP_DART_PACKAGES"),

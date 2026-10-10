@@ -87,7 +87,7 @@ translation.
 
 ## How sync is enforced
 
-- **While editing (Claude Code):** the flutter-ship `l10n_parity_hook.py` runs
+- **While editing (Claude Code):** the lastmile `l10n_parity_hook.py` runs
   after every ARB edit. It reports missing or extra keys, placeholder drift,
   and `CFBundleLocalizations` drift, and asks for the same change in every
   language. It is advisory and never blocks.

@@ -39,7 +39,7 @@ Ask for a runner **label** if they do not have one (suggestion:
 
 ## 2. Registration token and install
 
-From the **app repo** (the Flutter project, not flutter-ship):
+From the **app repo** (the Flutter project, not lastmile):
 
 ```bash
 TOKEN=$(gh api -X POST repos/:owner/:repo/actions/runners/registration-token --jq .token)

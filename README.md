@@ -1,9 +1,9 @@
-# flutter-skills
+# lastmile
 
-A Claude Code marketplace with one plugin, **flutter-ship**. It is for a
-Flutter iOS app with an optional FastAPI backend, and it works on the repo
-itself: it writes CI workflows and config, installs hooks that watch your
-edits, and walks the Apple and Firebase consoles with you.
+A Claude Code plugin, and the marketplace that serves it, for the last mile
+of a Flutter iOS app: everything between "it runs on my simulator" and
+"it's on TestFlight". It writes CI workflows and config, installs hooks that
+watch your edits, and walks the Apple and Firebase consoles with you.
 
 Run `/setup-project` in an empty directory (or a new Flutter repo) and you get
 CI, lint, unit tests, a complexity ratchet and an iOS integration-test harness
@@ -50,11 +50,21 @@ run looks like, and which steps stay with you.
 ## Install
 
 ```text
-/plugin marketplace add elliottmurray/flutter-skills
-/plugin install flutter-ship@flutter-skills
+/plugin install lastmile --marketplace elliottmurray/lastmile
 ```
 
-From a local checkout, use `/plugin marketplace add /path/to/flutter-skills`.
+That adds this repo as a marketplace and installs the plugin in one step
+(Claude Code 2.1.275 or later). On older versions:
+
+```text
+/plugin marketplace add elliottmurray/lastmile
+/plugin install lastmile@lastmile
+```
+
+To work on the plugin from a clone, point the marketplace at the path:
+`/plugin marketplace add /path/to/lastmile`.
+
+Releases and the Anthropic directory listing: [docs/releasing.md](docs/releasing.md).
 
 ## What you get
 
@@ -98,7 +108,7 @@ serialization, widget previews, pattern matching, coverage, FFI. They are
 technique and work the same in any Flutter project. They don't change your
 project config, add hooks, or touch a cloud console.
 
-flutter-ship is about one kind of project, a Flutter iOS app with an optional
+lastmile is about one kind of project, a Flutter iOS app with an optional
 Python backend, and it changes that project. It writes the CI workflows and
 `analysis_options.yaml`, installs a pre-commit hook and three edit hooks
 (complexity, model sync, ARB parity), and keeps them working. It also helps
@@ -109,7 +119,7 @@ leaves out: signing, TestFlight, Firebase, App Check, Remote Config.
 
 Where the two overlap:
 
-| Official skill | flutter-ship | Use the official one for | Use flutter-ship for |
+| Official skill | lastmile | Use the official one for | Use lastmile for |
 |---|---|---|---|
 | `flutter-apply-architecture-best-practices` | `/architecture` | Designing a new feature | Reviewing what changed, including the backend contract |
 | `flutter-setup-localization` | `/localization` | How gen-l10n works | Adding languages with the iOS plist entries, and the parity hook and CI check |
@@ -120,6 +130,31 @@ Where the two overlap:
 `/tdd` defers to the official test skills for the mechanics when they're
 installed. The official integration-test skill targets Chrome, Android and
 Firebase Test Lab, not the iOS Simulator.
+
+## What it runs on your machine
+
+**Hooks.** Three `PostToolUse` hooks run after Claude edits a file. Each is a
+local `python3` script in `hooks/` that reads the edited file and files in
+your project, prints an advisory message, and always exits 0. They make no
+network calls and write nothing.
+
+- `complexity_sensor_hook.py` runs your project's own
+  `scripts/complexity_sensor.py` (copied in by `/setup-project`) on Dart and
+  Python edits. Quiet if that script is absent.
+- `sync_model_hook.py` warns when a Dart or Python model changes without its
+  twin.
+- `l10n_parity_hook.py` warns when ARB translation files drift apart.
+
+**Scripts.** `scripts/render.py` copies `templates/` into your project when
+`/setup-project` runs. `scripts/sim_driver.py` drives the app for `/verify`
+by talking to the Dart VM Service on `localhost`.
+
+**Commands the skills ask Claude to run.** `flutter`, `xcrun simctl`, `gh`
+(for repository secrets and workflows, with confirmation first), `uv`, and
+`git`. Skills that set up Apple or Firebase walk you through their web
+consoles. Claude never handles your Apple or Google passwords.
+
+The plugin sends no data anywhere itself.
 
 ## After `/setup-project`
 

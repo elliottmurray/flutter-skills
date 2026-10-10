@@ -1,0 +1,14 @@
+{
+  "name": "lastmile",
+  "displayName": "Last Mile for Flutter",
+  "version": "0.5.0",
+  "description": "Take a Flutter iOS app the last mile to users: CI, TDD, lint, complexity gates, and an integration-test harness",
+  "author": {
+    "name": "Elliott Murray",
+    "url": "https://github.com/elliottmurray"
+  },
+  "homepage": "https://github.com/elliottmurray/lastmile",
+  "repository": "https://github.com/elliottmurray/lastmile",
+  "license": "MIT",
+  "keywords": ["flutter", "ios", "ci", "tdd", "feature-flags", "fastapi", "testflight"]
+}

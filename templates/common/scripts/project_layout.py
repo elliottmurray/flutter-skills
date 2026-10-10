@@ -14,7 +14,7 @@ Override without editing this file, highest precedence first:
   1. Environment — FLUTTER_SHIP_DART_PACKAGES / FLUTTER_SHIP_PYTHON_PACKAGES,
      space-separated. The older COMPLEXITY_DART_PACKAGES /
      COMPLEXITY_PYTHON_ROOT still work.
-  2. `.flutter-ship.json` at the repo root:
+  2. `.lastmile.json` at the repo root:
 
         {"dart_packages": ["app"], "python_packages": ["api"]}
 
@@ -35,7 +35,7 @@ import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-CONFIG_PATH = REPO_ROOT / ".flutter-ship.json"
+CONFIG_PATH = REPO_ROOT / ".lastmile.json"
 
 DEFAULT_DART_PACKAGES = (".",)
 DEFAULT_PYTHON_PACKAGES = ("backend",)

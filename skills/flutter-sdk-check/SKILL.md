@@ -22,13 +22,13 @@ test -f .github/workflows/flutter-sdk-update.yml \
   || echo "MISSING — recreate flutter-sdk-update.yml before proceeding"
 ```
 
-If the workflow is missing, copy it from flutter-ship
+If the workflow is missing, copy it from lastmile
 (`templates/common/.github/workflows/flutter-sdk-update.yml`) and stop.
 Do not bump pins locally without the Action.
 
-**Plugin-repo exception.** If this repo *is* flutter-ship (templates use
+**Plugin-repo exception.** If this repo *is* lastmile (templates use
 `{{FLUTTER_VERSION}}` and there is no app-level `flutter.yml` pin), skip
-the Action check and jump to [Maintaining flutter-ship](#maintaining-flutter-ship).
+the Action check and jump to [Maintaining lastmile](#maintaining-lastmile).
 
 ## 2. Read the pin list from the workflow
 
@@ -130,13 +130,13 @@ Without `GH_PAT` the Monday job fails at "Require GH_PAT" with setup
 text in the log. Add the secret on this repository, then re-run
 **Actions → Flutter SDK Update Check**.
 
-## Maintaining flutter-ship
+## Maintaining lastmile
 
 When this skill runs inside the plugin repo (no rendered `flutter.yml`):
 
 1. Fetch `$latest` with the same `releases_linux.json` snippet as above.
-2. Bump `DEFAULTS["FLUTTER_VERSION"]` in `plugins/flutter-ship/scripts/render.py`.
-3. Bump the default in `plugins/flutter-ship/skills/setup-project/SKILL.md`
+2. Bump `DEFAULTS["FLUTTER_VERSION"]` in `scripts/render.py`.
+3. Bump the default in `skills/setup-project/SKILL.md`
    (table + `--flutter-version` example). Templates already use
    `{{FLUTTER_VERSION}}` — do not hardcode a version in the workflow
    templates.

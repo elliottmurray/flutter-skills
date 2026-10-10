@@ -15,7 +15,7 @@ that file, `docs/feature-flags.md`, and `lib/config/app_channel.dart`.
 
 Read `docs/feature-flags.md` before editing. If those files are missing,
 stop: run `/setup-project` with Firebase, or copy the firebase templates
-from flutter-ship, before adding a flag.
+from lastmile, before adding a flag.
 
 `/firebase-setup` owns creating the Firebase project and the console
 `TestFlight` condition. This skill owns the registry lifecycle.

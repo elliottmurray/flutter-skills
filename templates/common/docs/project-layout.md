@@ -24,7 +24,7 @@ sensor, the pre-commit hook, the integration-test runner and the GitHub
 workflows — asks it rather than hardcoding `lib/` or `backend/`.
 
 To move the app into `app/` and rename the service to `api/`, add
-`.flutter-ship.json` at the repo root:
+`.lastmile.json` at the repo root:
 
 ```json
 {
