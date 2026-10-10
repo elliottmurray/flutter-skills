@@ -9,9 +9,12 @@ const _arbDir = 'lib/l10n';
 const _template = 'app_en.arb';
 const _infoPlist = 'ios/Runner/Info.plist';
 
-/// `{name,` or `{name}`: a placeholder or a plural/select argument. Branch
-/// text such as `=1{1 item}` doesn't match because a space follows the word.
-final _placeholder = RegExp(r'\{([A-Za-z_]\w*)[,}]');
+/// An ICU argument after its `{`: `name}` or `name, kind,` / `name, kind}`.
+final _argument = RegExp(r'\s*([A-Za-z_]\w*)\s*(?:,\s*(\w+)\s*)?([,}])');
+
+/// A plural/select branch key and its opening `{`, or the argument's `}`.
+final _branch = RegExp(r'\s*(?:([^\s{}]+)\s*\{|\})');
+const _branched = {'plural', 'select', 'selectordinal'};
 
 /// Translatable messages, minus ARB metadata (`@key`, `@@locale`).
 Map<String, String> _messages(File file) {
@@ -22,8 +25,54 @@ Map<String, String> _messages(File file) {
   };
 }
 
-Set<String> _placeholders(String message) =>
-    _placeholder.allMatches(message).map((m) => m.group(1)!).toSet();
+/// Argument names in an ICU message: `{name}`, `{n, plural, …}`,
+/// `{g, select, …}`. Plural and select branch bodies are messages in their own
+/// right, so a one-word branch such as `other{they}` is text, not a
+/// placeholder.
+Set<String> _placeholders(String message) {
+  final found = <String>{};
+  // A stray top-level `}` is just text.
+  for (var i = 0; i < message.length; i++) {
+    i = _scanText(message, i, found);
+  }
+  return found;
+}
+
+/// Scans message text from [i]; returns the index of its closing `}` (or the
+/// end).
+int _scanText(String text, int i, Set<String> found) {
+  for (; i < text.length; i++) {
+    if (text[i] == '}') return i;
+    if (text[i] == '{') i = _scanArgument(text, i + 1, found);
+  }
+  return i;
+}
+
+/// Scans an argument from just after its `{`; returns the index of its `}`.
+int _scanArgument(String text, int i, Set<String> found) {
+  final match = _argument.matchAsPrefix(text, i);
+  if (match == null) return _skipBraces(text, i);
+  found.add(match.group(1)!);
+  i = match.end;
+  if (match.group(3) == '}') return i - 1;
+  // `{amount, number, currency}`
+  if (!_branched.contains(match.group(2))) return _skipBraces(text, i);
+  while (true) {
+    final branch = _branch.matchAsPrefix(text, i);
+    if (branch == null) return _skipBraces(text, i);
+    if (branch.group(1) == null) return branch.end - 1;
+    i = _scanText(text, branch.end, found) + 1;
+  }
+}
+
+/// Index of the `}` that closes an already-open `{`, or the end.
+int _skipBraces(String text, int i) {
+  for (var depth = 1; i < text.length; i++) {
+    if (text[i] == '{') depth++;
+    if (text[i] == '}' && --depth == 0) return i;
+  }
+  return i;
+}
 
 String _normalize(String locale) => locale.replaceAll('-', '_').toLowerCase();
 
@@ -62,6 +111,21 @@ void main() {
       }
     });
   }
+
+  group('placeholders', () {
+    test('one-word plural and select branches are text', () {
+      expect(_placeholders('{g, select, male{he} female{she} other{they}}'),
+          {'g'});
+      expect(_placeholders('{n, plural, =0{none} other{{n} items}}'), {'n'});
+    });
+
+    test('arguments inside branches and formatted arguments count', () {
+      expect(_placeholders('Hi {name}, {n, plural, other{{n} from {who}}}'),
+          {'name', 'n', 'who'});
+      expect(_placeholders('{amount, number, currency} on {day, date}'),
+          {'amount', 'day'});
+    });
+  });
 
   test('iOS CFBundleLocalizations lists every ARB locale', () {
     final plist = File(_infoPlist);

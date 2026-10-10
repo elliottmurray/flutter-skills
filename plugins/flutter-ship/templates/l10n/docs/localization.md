@@ -40,6 +40,33 @@ Counts use ICU plurals, never `n == 1 ? … : …`:
 Each language picks its own plural branches. French, for example, treats 0 as
 singular, so its ARB adds `=0{0 article}`.
 
+A choice between fixed values uses `select`, with the keys left in English in
+every language:
+
+```json
+"pronoun": "{gender, select, male{he} female{she} other{they}}"
+```
+
+Every `plural` and `select` needs an `other` branch.
+
+Give each placeholder a type in the `@key` block, plus a format for numbers
+and dates, so `intl` formats it for the locale:
+
+```json
+"lastPlayed": "Last played {date}",
+"@lastPlayed": {
+  "description": "Under the resume button",
+  "placeholders": {
+    "date": {"type": "DateTime", "format": "yMMMd"}
+  }
+}
+```
+
+Numbers take a `NumberFormat` name (`compact`, `decimalPattern`,
+`simpleCurrency`, …). Dates take a `DateFormat` skeleton (`yMd`, `jm`, …), or
+a custom pattern with `"isCustomDateFormat": "true"`. Without a type, the
+generated parameter is `Object` and isn't formatted.
+
 Store text that is shown in capitals in capitals in each ARB, so every
 language controls its own casing.
 

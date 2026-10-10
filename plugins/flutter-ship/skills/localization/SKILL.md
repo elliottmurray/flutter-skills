@@ -62,7 +62,9 @@ the interview, with the languages already chosen.
    prints the command if a dependency is still missing.
 4. **Languages.** `python3 scripts/l10n_locales.py add <codes…>`, then
    [translate](#translating) every key it prints.
-5. **Wire the app.** In the `MaterialApp` (or `.router`) in `lib/`:
+5. **Wire the app.** In the `MaterialApp` (or `.router`, or `CupertinoApp`)
+   in `lib/`. The generated `localizationsDelegates` already include the
+   Material, Cupertino and Widgets delegates, so don't list them by hand:
 
    ```dart
    import 'package:<PACKAGE_NAME>/l10n/l10n.dart';
@@ -114,15 +116,51 @@ One edit set covers every language:
 The hook fires after each ARB edit and lists what still differs. Finish every
 language before moving on. Don't leave a locale for later.
 
+Give every placeholder a typed entry in the `@key` block. Without one,
+gen-l10n types it `Object` and does no locale formatting:
+
+```json
+"greeting": "Hello {name}",
+"@greeting": {
+  "description": "Home screen header",
+  "placeholders": {"name": {"type": "String", "example": "Sam"}}
+},
+"balance": "Balance: {amount}",
+"@balance": {
+  "placeholders": {
+    "amount": {"type": "double", "format": "simpleCurrency", "optionalParameters": {"decimalDigits": 2}}
+  }
+},
+"lastPlayed": "Last played {date}",
+"@lastPlayed": {
+  "placeholders": {"date": {"type": "DateTime", "format": "yMMMd"}}
+}
+```
+
+Numbers (`int`, `double`, `num`) take an `intl` `NumberFormat` name such as
+`compact`, `decimalPattern`, `percentPattern` or `simpleCurrency`. `DateTime`
+takes a `DateFormat` skeleton such as `yMd`, `yMMMd` or `jm`. For a custom
+pattern like `dd/MM`, add `"isCustomDateFormat": "true"`. Let the format
+handle separators, currency symbols and date order. Never build those into
+the string.
+
 Counts use ICU plurals (`{count, plural, =1{…} other{…}}`), with the branches
 right for each language. Never build a plural with `n == 1 ? … : …`.
+
+A choice between fixed values uses `select`:
+`{gender, select, male{he} female{she} other{they}}`. The placeholder type is
+`String`. Pass an enum's `.name`, never its display text.
+
+Every `plural` and `select` needs an `other` branch, or gen-l10n fails.
 
 ## Translating
 
 - Translate the meaning in context, not word for word. Read the `@key`
   `description` and the widget that shows the string.
 - Keep every `{placeholder}` and the ICU structure exactly as in English.
-  Translate only the text inside the branches.
+  Translate only the text inside the branches. Never translate a `select`
+  key (`male`, `other`) or a placeholder name. Plural branches can differ:
+  add the categories a language needs (`=0`, `few`, `many`) and keep `other`.
 - Keep the casing convention: if English is all caps, so is the translation.
 - Leave brand names and the app title as they are.
 - Watch the length. If a translation is much longer than the English, look at

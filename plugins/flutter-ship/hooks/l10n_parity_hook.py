@@ -28,9 +28,11 @@ DEFAULT_ARB_DIR = "lib/l10n"
 DEFAULT_TEMPLATE = "app_en.arb"
 INFO_PLIST = "ios/Runner/Info.plist"
 
-# `{name,` or `{name}`: a placeholder or a plural/select argument. Branch text
-# such as `=1{1 mistake}` doesn't match because a space follows the word.
-_PLACEHOLDER = re.compile(r"\{([A-Za-z_]\w*)[,}]")
+# An ICU argument after its `{`: `name}` or `name, kind,` / `name, kind}`.
+_ARGUMENT = re.compile(r"\s*([A-Za-z_]\w*)\s*(?:,\s*(\w+)\s*)?([,}])")
+# A plural/select branch key and its opening `{`, or the argument's closing `}`.
+_BRANCH = re.compile(r"\s*(?:([^\s{}]+)\s*\{|\})")
+_BRANCHED = {"plural", "select", "selectordinal"}
 _YAML_SCALAR = re.compile(r"^([\w-]+)\s*:\s*['\"]?([^'\"#\n]*?)['\"]?\s*(?:#.*)?$", re.MULTILINE)
 _PLIST_LOCALIZATIONS = re.compile(
     r"<key>CFBundleLocalizations</key>\s*<array>(.*?)</array>", re.DOTALL
@@ -52,7 +54,60 @@ def messages(arb: dict) -> dict:
 
 
 def placeholders(message) -> set[str]:
-    return set(_PLACEHOLDER.findall(message)) if isinstance(message, str) else set()
+    """Argument names in an ICU message: `{name}`, `{n, plural, …}`, `{g, select, …}`.
+
+    Plural and select branch bodies are messages in their own right, so a
+    one-word branch such as `other{they}` is text, not a placeholder.
+    """
+    found: set[str] = set()
+    if isinstance(message, str):
+        i = 0
+        while i < len(message):  # a stray top-level `}` is just text
+            i = _scan_text(message, i, found) + 1
+    return found
+
+
+def _scan_text(text: str, i: int, found: set[str]) -> int:
+    """Scan message text from `i`; return the index of its closing `}` (or the end)."""
+    while i < len(text):
+        if text[i] == "}":
+            return i
+        if text[i] == "{":
+            i = _scan_argument(text, i + 1, found)
+        i += 1
+    return i
+
+
+def _scan_argument(text: str, i: int, found: set[str]) -> int:
+    """Scan an argument from just after its `{`; return the index of its `}`."""
+    match = _ARGUMENT.match(text, i)
+    if not match:
+        return _skip_braces(text, i)
+    name, kind, end = match.groups()
+    found.add(name)
+    i = match.end()
+    if end == "}":
+        return i - 1
+    if kind not in _BRANCHED:
+        return _skip_braces(text, i)  # `{amount, number, currency}`
+    while True:
+        branch = _BRANCH.match(text, i)
+        if not branch:
+            return _skip_braces(text, i)
+        if branch.group(1) is None:
+            return branch.end() - 1
+        i = _scan_text(text, branch.end(), found) + 1
+
+
+def _skip_braces(text: str, i: int) -> int:
+    """Index of the `}` that closes an already-open `{`, or the end."""
+    depth = 1
+    while i < len(text):
+        depth += {"{": 1, "}": -1}.get(text[i], 0)
+        if depth == 0:
+            return i
+        i += 1
+    return i
 
 
 def _braced(names: set[str]) -> str:
