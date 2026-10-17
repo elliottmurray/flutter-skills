@@ -168,9 +168,9 @@ Done. Next:
 
 Skills when you need them:
   /tdd
-  /ios-ci-setup          # signing secrets + Apple portal
+  /ios-ci-setup          # signing secrets, Apple portal, App Store Connect app record
   /self-hosted-runner    # Mac LaunchAgent, swap runs-on
-  /firebase-setup        # console + Remote Config app_channel
+  /firebase-setup        # optional: project, iOS app, Remote Config app_channel (Firebase MCP or console)
   /app-check             # DeviceCheck / App Attest + backend flag
   /fastapi-setup         # uv, ruff, pytest, optional Docker
   /localization          # add a language, audit translation drift

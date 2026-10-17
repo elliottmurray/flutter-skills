@@ -67,8 +67,8 @@ grep -m1 PRODUCT_BUNDLE_IDENTIFIER ios/Runner.xcodeproj/project.pbxproj
   `! gh auth login -h github.com -s repo,workflow`.
 - The Apple account needs a paid Developer Program membership and the Admin or
   Account Holder role. A free Apple ID cannot do steps 2, 4 or 5; stop and say so.
-- The App Store Connect app record must exist before the first real upload:
-  Apps → **+** → New App, with the bundle id. The dry run in step 7 does not need it.
+- The App Store Connect app record (step 7) must exist before the first real
+  upload. The dry run in step 8 does not need it.
 
 Done when `gh` is authenticated, `origin` exists, and the bundle id is known.
 
@@ -169,7 +169,27 @@ KEYID=ABC123DEFG $H set-secret APP_STORE_CONNECT_API_KEY_ID --repo OWNER/REPO --
 
 Done when `gh secret list --repo OWNER/REPO` shows all seven.
 
-## 7. Dry run
+## 7. App Store Connect app record
+
+Step 4 made an App ID, which is only a bundle identifier in the developer
+portal. It does not appear in App Store Connect, and the first TestFlight
+upload fails without a record there.
+
+[appstoreconnect.apple.com](https://appstoreconnect.apple.com) → Apps → **+** →
+New App:
+
+- Platforms: iOS
+- Name: unique across the whole App Store, so the obvious name may be taken.
+  Pick a fallback now; the name can change before release, the bundle id cannot.
+- Primary language
+- Bundle ID: pick the one from step 4 in the dropdown. If it is missing, the
+  App ID does not exist yet or sits under a different team.
+- SKU: any private string, e.g. the package name
+- User access: Full Access
+
+Done when the app shows in the Apps list.
+
+## 8. Dry run
 
 The workflow must be on GitHub. Commit and push first, with the user's yes.
 
@@ -185,7 +205,20 @@ causes in [troubleshooting.md](troubleshooting.md).
 
 Done when the run's `conclusion` is `success`.
 
-## 8. Tidy
+## 9. First TestFlight upload
+
+The dry run builds with `upload_target=none`. Once it passes and step 7 is
+done, tell the user the next real run is:
+
+```bash
+gh workflow run Release --repo OWNER/REPO -f upload_target=testflight
+```
+
+Check the input name against `release.yml` before printing it. The build
+appears in App Store Connect → TestFlight after processing, a few minutes
+later. Internal testers need no review; external testers need a beta review.
+
+## 10. Tidy
 
 Signing files live in `~/ios-signing/` (mode 700). The `.p8` cannot be
 downloaded again; keep one copy there or delete it, since a new key replaces it.
