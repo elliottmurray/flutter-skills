@@ -449,10 +449,10 @@ Roughly in order, each one standalone:
 | `/localization` | gen-l10n plus your languages; a hook and tests keep every ARB in step with English |
 | `/verify` | Drive the running simulator: tap, eval, screenshot |
 | `/fastapi-setup` | Docker, App Check on real routes |
-| `/firebase-setup` | The project, the iOS app, the `TestFlight` RC condition. Faster with Chrome connected, see [chrome.md](chrome.md) |
+| `/firebase-setup` | Optional. The project, the iOS app, the `TestFlight` RC condition. Can run through the Firebase MCP server (`claude mcp add firebase -- npx -y firebase-tools@latest mcp`, after `npx firebase-tools login`), or Chrome, see [chrome.md](chrome.md) |
 | `/app-check` | App Attest, DeviceCheck, debug tokens, then section 8 |
 | `/feature-flags` | Remote Config flags with a beta-only tier |
-| `/ios-ci-setup` | Signing secrets. Needs the paid Apple account |
+| `/ios-ci-setup` | Signing secrets and the App Store Connect app record, so the first TestFlight upload works. Needs the paid Apple account |
 | `/self-hosted-runner` | Move the Mac jobs off `macos-latest` billing |
 | `/complexity` | Turn the baseline into a ratchet |
 

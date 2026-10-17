@@ -13,9 +13,9 @@ What each skill does and whether it ships in this version.
 | `/flutter-sdk-check` | **Shipped** | `/setup-project` | Bump pinned `flutter-version` across workflows; stay in sync with the Monday Action |
 | `/pr-review` | **Shipped** | standalone | Generic rubric + keep `claude.yml`; danger areas from the app `CLAUDE.md` |
 | `/architecture` | **Shipped** | standalone | MVVM + repository (Flutter) and transport/logic/data (API) checked against the diff from `HEAD`; backend rules in `backends/*.md` |
-| `/ios-ci-setup` | **Shipped** | `/setup-project`, Apple Developer Program (Admin) | Guided checklist by default, Chrome optional. A tested helper makes the CSR and p12 (no Xcode needed), checks the profile, and sets the seven secrets without printing them. Dry-run build to confirm |
+| `/ios-ci-setup` | **Shipped** | `/setup-project`, Apple Developer Program (Admin) | Guided checklist by default, Chrome optional. A tested helper makes the CSR and p12 (no Xcode needed), checks the profile, and sets the seven secrets without printing them. App Store Connect app record, dry-run build to confirm |
 | `/self-hosted-runner` | **Shipped** | `/setup-project`, admin on the repo, a Mac that stays on | Use this Mac for integration tests (release stays hosted unless chosen): `config.sh` per repo, LaunchAgent (not `svc.sh`), `pmset`, swap `runs-on` |
-| `/firebase-setup` | **Shipped** | `/setup-project --firebase`, a Google account | Checklist / Chrome: project, iOS app, RC `app_channel` condition |
+| `/firebase-setup` | **Shipped** | `/setup-project --firebase`, a Google account | Optional. Checklist, Firebase MCP or Chrome: project, iOS app, RC `app_channel` condition. MCP needs Node 20+ and `firebase login` |
 | `/app-check` | **Shipped** | `/firebase-setup`, Apple Developer Program (Admin) | DeviceCheck / App Attest, debug tokens, backend enforcement flag |
 | `/fastapi-setup` | **Shipped** | standalone | Expand the stub: uv, ruff, pytest, Docker optional |
 | `/verify` | **Shipped** | standalone | Generic VM Service driver (tap / eval / screenshot) |

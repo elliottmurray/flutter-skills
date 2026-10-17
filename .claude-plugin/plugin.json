@@ -1,7 +1,7 @@
 {
   "name": "lastmile",
   "displayName": "Last Mile for Flutter",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Take a Flutter iOS app the last mile to users: CI, TDD, lint, complexity gates, and an integration-test harness",
   "author": {
     "name": "Elliott Murray",
