@@ -20,6 +20,21 @@ to WindowServer. `./svc.sh install` puts a LaunchDaemon in a non-Aqua
 session — boots fail with vague CoreSimulator errors. Use a per-user
 **LaunchAgent**. Never `svc.sh`.
 
+## 0. Scope: use this Mac as a runner?
+
+Ask: **Do you want to use this Mac as a runner?** Offer two scopes.
+
+- **Integration tests only (recommended).** Tests boot the Simulator and never
+  touch signing, so a machine you also develop on is a fine host. This sets
+  `runs-on` for the `integration-test` job only.
+- **Integration tests and release.** The release job imports a certificate
+  into a temporary keychain and adds it to the user keychain search list for
+  the length of the run. A killed job can leave that list altered. Offer this
+  for a dedicated macOS user or a dedicated machine, and say why before
+  agreeing on a dev machine. Hosted `macos-latest` stays the default.
+
+Done when the scope is stated back and the label (step 1) is chosen.
+
 ## 1. Confirm the machine
 
 Run these on the Mac that will stay on:
@@ -37,6 +52,18 @@ Ask for a runner **label** if they do not have one (suggestion:
 `app-runner`). Labels are added on top of GitHub's automatic
 `self-hosted`, `macOS`, and arch labels.
 
+A runner belongs to one repository. A Mac that already runs one for another
+repo needs a second instance for this one, each with its own directory and
+LaunchAgent. List what exists, and leave it untouched:
+
+```bash
+ls ~/Library/LaunchAgents | grep -i 'github.actions'
+launchctl list | grep -i runner
+```
+
+Two runners on one Mac take jobs independently and share one Simulator, so
+tell the user if both repos can run integration tests at the same time.
+
 ## 2. Registration token and install
 
 From the **app repo** (the Flutter project, not lastmile):
@@ -44,13 +71,16 @@ From the **app repo** (the Flutter project, not lastmile):
 ```bash
 TOKEN=$(gh api -X POST repos/:owner/:repo/actions/runners/registration-token --jq .token)
 REPO_URL=$(gh repo view --json url -q .url)
+REPO=$(basename "$REPO_URL")
+RUNNER_DIR="$HOME/actions-runner-$REPO"
 echo "$REPO_URL"
 ```
 
 `:owner/:repo` resolves from the current remotes. Do not hardcode a path.
 
-Install into a directory **outside** the app repo (default
-`$HOME/actions-runner`). Reuse it if `config.sh` is already there.
+Install into a directory **outside** the app repo, named for the repo
+(`$HOME/actions-runner-<repo>`), so an existing runner is never overwritten.
+Reuse the directory if `config.sh` is already there.
 
 ```bash
 RUNNER_VERSION=$(curl -sSf https://api.github.com/repos/actions/runner/releases/latest \
@@ -62,15 +92,15 @@ case "$ARCH" in
   *) echo "unsupported arch: $ARCH" >&2; exit 1 ;;
 esac
 
-mkdir -p "$HOME/actions-runner"
-cd "$HOME/actions-runner"
+mkdir -p "$RUNNER_DIR"
+cd "$RUNNER_DIR"
 curl -L -o actions-runner.tgz \
   "https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-${PKG}-${RUNNER_VERSION}.tar.gz"
 tar xzf actions-runner.tgz
 rm actions-runner.tgz
 
 ./config.sh --url "$REPO_URL" --token "$TOKEN" \
-  --name "$(scutil --get LocalHostName)" \
+  --name "$(scutil --get LocalHostName)-$REPO" \
   --labels "$LABEL" \
   --unattended --replace
 ```
@@ -80,9 +110,9 @@ Confirm `./run.sh` exists. Do not start it yet, and do not run
 
 ## 3. LaunchAgent (Aqua session)
 
-Write `$HOME/Library/LaunchAgents/com.github.actions.runner.plist`.
-Substitute the real home directory; do not leave `$HOME` inside the plist
-`ProgramArguments`.
+Write `$HOME/Library/LaunchAgents/com.github.actions.<repo>-runner.plist`.
+Substitute the real home directory and repo name; do not leave `$HOME` inside
+the plist `ProgramArguments`.
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -90,12 +120,12 @@ Substitute the real home directory; do not leave `$HOME` inside the plist
 <plist version="1.0">
 <dict>
   <key>Label</key>
-  <string>com.github.actions.runner</string>
+  <string>com.github.actions.REPO-runner</string>
   <key>WorkingDirectory</key>
-  <string>/Users/YOU/actions-runner</string>
+  <string>/Users/YOU/actions-runner-REPO</string>
   <key>ProgramArguments</key>
   <array>
-    <string>/Users/YOU/actions-runner/run.sh</string>
+    <string>/Users/YOU/actions-runner-REPO/run.sh</string>
   </array>
   <key>RunAtLoad</key>
   <true/>
@@ -108,9 +138,9 @@ Substitute the real home directory; do not leave `$HOME` inside the plist
   <key>ThrottleInterval</key>
   <integer>30</integer>
   <key>StandardOutPath</key>
-  <string>/Users/YOU/actions-runner/launchd.stdout.log</string>
+  <string>/Users/YOU/actions-runner-REPO/launchd.stdout.log</string>
   <key>StandardErrorPath</key>
-  <string>/Users/YOU/actions-runner/launchd.stderr.log</string>
+  <string>/Users/YOU/actions-runner-REPO/launchd.stderr.log</string>
   <key>EnvironmentVariables</key>
   <dict>
     <key>PATH</key>
@@ -120,15 +150,15 @@ Substitute the real home directory; do not leave `$HOME` inside the plist
 </plist>
 ```
 
-Load it into the **current GUI session** (replace `YOU` first):
+Load it into the **current GUI session** (replace `YOU` and `REPO` first):
 
 ```bash
 uid=$(id -u)
-plist="$HOME/Library/LaunchAgents/com.github.actions.runner.plist"
-launchctl bootout "gui/$uid/com.github.actions.runner" 2>/dev/null || true
+plist="$HOME/Library/LaunchAgents/com.github.actions.REPO-runner.plist"
+launchctl bootout "gui/$uid/com.github.actions.REPO-runner" 2>/dev/null || true
 launchctl bootstrap "gui/$uid" "$plist"
-launchctl enable "gui/$uid/com.github.actions.runner"
-launchctl kickstart -k "gui/$uid/com.github.actions.runner"
+launchctl enable "gui/$uid/com.github.actions.REPO-runner"
+launchctl kickstart -k "gui/$uid/com.github.actions.REPO-runner"
 ```
 
 On older macOS where `bootstrap` is missing: `launchctl load -w "$plist"`.
@@ -140,7 +170,7 @@ gh api repos/:owner/:repo/actions/runners --jq '.runners[] | {name,status,labels
 ```
 
 Status should be `online`. If it is `offline`, read
-`$HOME/actions-runner/launchd.stderr.log` — the usual cause is the agent
+`$RUNNER_DIR/launchd.stderr.log` — the usual cause is the agent
 running outside Aqua (`svc.sh`) or no GUI login.
 
 ## 4. Stay awake, stay logged in
@@ -189,10 +219,12 @@ In `.github/workflows/integration_tests.yml`, the integration job's
     runs-on: [self-hosted, macOS, LABEL]
 ```
 
-Replace `LABEL` with the label from step 1. Leave `release.yml` on
-`macos-latest` unless they explicitly want signing on this Mac too.
+Replace `LABEL` with the label from step 1. `release.yml` keeps its hosted
+`runs-on` unless step 0 chose release too. In that case set it the same way,
+and tell the user the keychain repair command:
+`security list-keychains -d user -s "$HOME/Library/Keychains/login.keychain-db"`.
 
-If `{{RUNNER_LABEL}}` is still unrendered, the app was not run through
+If `{{RUNNER_LABEL}}` or `{{RELEASE_RUNNER_LABEL}}` is still unrendered, the app was not run through
 `/setup-project` — stop and render templates first.
 
 ## 7. Verify
@@ -200,7 +232,7 @@ If `{{RUNNER_LABEL}}` is still unrendered, the app was not run through
 ```bash
 gh workflow run "Integration Tests"
 gh run list --workflow "Integration Tests" --limit 3
-gh run watch
+gh run view RUN_ID --json status,conclusion,jobs
 ```
 
 The job must land on the self-hosted runner (`Run self-hosted/…` in the
@@ -214,3 +246,4 @@ CoreSimulator / WindowServer, the LaunchAgent is not in Aqua — undo
 - Put the runner install inside the Flutter git checkout.
 - Change `release.yml` `runs-on` unless asked.
 - Disable SIP or turn off Gatekeeper to make Simulator quieter.
+- Point `release.yml` at the Mac the user develops on without the step 0 warning.

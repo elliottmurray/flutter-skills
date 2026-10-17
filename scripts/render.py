@@ -17,7 +17,9 @@ rendered; build detritus (`__pycache__`, `.pyc`, `.DS_Store`) is skipped.
 from __future__ import annotations
 
 import argparse
+import json
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -28,8 +30,14 @@ TEMPLATES = PLUGIN_ROOT / "templates"
 SYNC_FLAVOURS = ("intent", "shared")
 
 DEFAULTS = {
+    # Fallback only: `detect_flutter_version` prefers the installed SDK, so CI
+    # never pins an SDK older than the Dart constraint `flutter create` wrote.
     "FLUTTER_VERSION": "3.47.2",
+    # Integration tests. A local Mac is fine here: no signing, no keychain.
     "RUNNER_LABEL": "macos-latest",
+    # Signing runs here. Keep it hosted unless the runner is a dedicated user
+    # or machine: the job changes the user keychain search list while it runs.
+    "RELEASE_RUNNER_LABEL": "macos-latest",
     "APPLE_TEAM_ID": "YOUR_TEAM_ID",
 }
 
@@ -120,13 +128,30 @@ def copy_tree(src: Path, dest: Path, mapping: dict[str, str], *, force: bool) ->
     return written
 
 
+def detect_flutter_version() -> str:
+    """The installed Flutter SDK's version, or the fallback default."""
+    try:
+        out = subprocess.run(
+            ["flutter", "--version", "--machine"],
+            capture_output=True, text=True, timeout=60,
+        ).stdout
+        return json.loads(out[out.index("{"):])["frameworkVersion"]
+    except (OSError, subprocess.SubprocessError, ValueError, KeyError):
+        return DEFAULTS["FLUTTER_VERSION"]
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dest", required=True, type=Path)
     parser.add_argument("--app-name", required=True)
     parser.add_argument("--bundle-id", required=True)
-    parser.add_argument("--flutter-version", default=DEFAULTS["FLUTTER_VERSION"])
-    parser.add_argument("--runner-label", default=DEFAULTS["RUNNER_LABEL"])
+    parser.add_argument("--flutter-version", default=None,
+                        help="default: the installed Flutter SDK's version")
+    parser.add_argument("--runner-label", default=DEFAULTS["RUNNER_LABEL"],
+                        help="runs-on for integration tests")
+    parser.add_argument("--release-runner-label",
+                        default=DEFAULTS["RELEASE_RUNNER_LABEL"],
+                        help="runs-on for the signed release build")
     parser.add_argument("--apple-team-id", default=DEFAULTS["APPLE_TEAM_ID"])
     parser.add_argument("--package-name", default="")
     parser.add_argument("--firebase", action="store_true")
@@ -145,8 +170,9 @@ def main(argv: list[str] | None = None) -> int:
         "APP_NAME": args.app_name,
         "BUNDLE_ID": args.bundle_id,
         "PACKAGE_NAME": pkg,
-        "FLUTTER_VERSION": args.flutter_version,
+        "FLUTTER_VERSION": args.flutter_version or detect_flutter_version(),
         "RUNNER_LABEL": args.runner_label,
+        "RELEASE_RUNNER_LABEL": args.release_runner_label,
         "APPLE_TEAM_ID": args.apple_team_id,
     }
 

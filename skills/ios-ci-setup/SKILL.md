@@ -12,218 +12,188 @@ user_invocable: true
 
 `/setup-project` already writes `release.yml`. This skill puts the seven
 signing secrets in GitHub so that workflow can build and upload an IPA.
+Release builds run on a hosted `macos-latest` runner. Leave `runs-on` there:
+signing changes the user keychain search list, and a dev machine is the wrong
+place for that.
 
-The certificate **private key** is created on this Mac (Xcode or Keychain).
-The Apple portal can issue a `.cer`; it cannot invent the matching key.
-Do not promise unattended portal automation. After Apple 2FA, Chrome on
-[developer.apple.com](https://developer.apple.com) is a click-through
-helper, not a headless API client.
-
-## Secrets `release.yml` expects
-
-| GitHub secret | What it is |
-|---|---|
-| `IOS_DISTRIBUTION_CERT_P12` | Base64 of the Apple Distribution `.p12` (cert **and** private key) |
-| `IOS_DISTRIBUTION_CERT_PASSWORD` | Password used when exporting that `.p12` |
-| `IOS_PROVISIONING_PROFILE` | Base64 of the App Store `.mobileprovision` |
-| `IOS_PROVISIONING_PROFILE_UUID` | Profile UUID (filename in `~/Library/MobileDevice/Provisioning Profiles`) |
-| `APP_STORE_CONNECT_API_KEY_ID` | Key ID from App Store Connect |
-| `APP_STORE_CONNECT_ISSUER_ID` | Issuer ID from App Store Connect |
-| `APP_STORE_CONNECT_API_KEY_CONTENT` | Base64 of the `.p8` private key |
-
-Confirm with the user before every `gh secret set`. Never `git add` these
-files. Never paste full secret values into the PR body.
-
-## 1. Prerequisites
-
-### Apple account
-
-Confirm these before opening the portal. None can be worked around from
-this Mac, so stop and say which is missing rather than starting step 2.
-
-- A paid **Apple Developer Program** membership. A free Apple ID cannot
-  create an Apple Distribution certificate, an App Store provisioning
-  profile, or an App Store Connect API key — the portal does not offer
-  them. `security find-identity` passing says nothing about this.
-- An **Admin** or **Account Holder** role on that team. A Developer role
-  can make a certificate but cannot create the Team API key in step 5.
-- For a real upload, the **app record already exists** in App Store
-  Connect for this bundle id (Apps → **+** → New App). Step 7's dry run
-  does not need it; the first TestFlight upload does.
-
-### This Mac
+Local steps go through one script, `ios_signing.py`. It keeps passwords out of
+argv and stdout, reads p12 files from both OpenSSL 3 and the macOS Keychain,
+and needs no Xcode.
 
 ```bash
-xcode-select -p    # must end in Xcode.app, not CommandLineTools
-xcodebuild -version
-security find-identity -v -p codesigning | head
+H="python3 ${CLAUDE_PLUGIN_ROOT}/scripts/ios_signing.py"
 ```
 
-If `xcode-select -p` prints `/Library/Developer/CommandLineTools`, the
-Xcode path in step 4 does not exist. Install Xcode, then
-`sudo xcode-select -s /Applications/Xcode.app/Contents/Developer`.
+## Secret handling
 
-Xcode also has to be **signed into an Apple ID on that team** (Xcode →
-Settings → Accounts). Step 4 creates the private key through it.
+Everything a tool prints is part of the conversation. Keep these out of it:
+the p12 password, the `.p8` contents, the p12 and `.p8` base64, GitHub tokens.
 
-### GitHub
+- Passwords go in through the helper's hidden prompt: a hidden macOS dialog
+  under `!` (there is no terminal there, so `read -s` fails silently), or a
+  hidden terminal prompt in a normal Terminal window.
+- Files go to GitHub through the helper, which pipes them to `gh` on stdin.
+  Show a file's name and length. Show a password nowhere, fingerprint included.
+- Identifiers are safe to show: Team ID, Key ID, Issuer ID, profile UUID,
+  certificate SHA-1.
+- If a secret does reach the conversation, rotate it: revoke the API key in
+  App Store Connect, or revoke the certificate in the portal, and redo the step.
+
+## 0. Choose a mode
+
+Ask once: **Guided** (default) or **Chrome-assisted**.
+
+- **Guided:** the user clicks in their own browser. For each portal step, give
+  the exact URL and the button names, then wait for "done". Run every local
+  command yourself.
+- **Chrome-assisted:** requires `/chrome` connected. Drive developer.apple.com
+  after the user finishes Apple 2FA. Find elements by ref, since window resizes
+  move coordinates. Ask before each download, and let the user type any
+  password. After two failed browser calls, say so and continue in Guided.
+
+Done when the mode is stated back to the user.
+
+## 1. Preflight
 
 ```bash
-gh auth status
-```
-
-The token needs `repo` and `workflow` scope — `gh auth status` lists what
-it has, and `gh auth refresh -s workflow` adds a missing one. The repo
-needs Actions enabled. `release.yml` builds on `macos-latest`, at 10×
-minutes on a private repo; `/self-hosted-runner` moves that to a local Mac.
-
-### Browser
-
-Steps 2–5 read better with the Claude in Chrome extension installed and
-permitted for `developer.apple.com` and `appstoreconnect.apple.com`.
-Without it, run the same steps as a spoken checklist — name the page and
-the button, wait for them to confirm. A missing extension is not a reason
-to stop.
-
-### The project
-
-Read the bundle id and team id the workflows already use:
-
-```bash
-# Bundle id from the iOS project
+gh auth status          # needs repo + workflow; refresh now if the token is old
+git remote -v           # needs origin
 grep -m1 PRODUCT_BUNDLE_IDENTIFIER ios/Runner.xcodeproj/project.pbxproj
-
-# Team id placeholder in the rendered workflow
-grep -n APPLE_TEAM_ID .github/workflows/release.yml || \
-  grep -n teamID .github/workflows/release.yml
 ```
 
-If `release.yml` still has `YOUR_TEAM_ID`, ask for the 10-character Team
-ID (Apple Developer → Membership) and patch it before a real upload.
+- No `origin`: offer `gh repo create OWNER/NAME --private --source=. --remote=origin`.
+- A token that expires mid-flow fails later steps with 404s. If `gh auth status`
+  reports an invalid token, have the user run
+  `! gh auth login -h github.com -s repo,workflow`.
+- The Apple account needs a paid Developer Program membership and the Admin or
+  Account Holder role. A free Apple ID cannot do steps 2, 4 or 5; stop and say so.
+- The App Store Connect app record must exist before the first real upload:
+  Apps → **+** → New App, with the bundle id. The dry run in step 7 does not need it.
 
-If they already have a Distribution `.p12`, an App Store profile, and an
-App Store Connect `.p8`, skip to [Encode and set secrets](#6-encode-and-set-secrets).
+Done when `gh` is authenticated, `origin` exists, and the bundle id is known.
 
-## 2. Apple 2FA, then Chrome
-
-Ask them to complete Apple two-factor authentication in the browser.
-**Do not continue** until they say the session is unlocked.
-
-Then open Chrome to
-[developer.apple.com/account](https://developer.apple.com/account)
-(Certificates, Identifiers & Profiles). If a click fails or the portal
-challenges again, stop driving the browser and switch to a spoken
-checklist — wait for them to confirm each page.
-
-Do not call App Store Connect or the developer portal as an unattended
-REST client. No `fastlane match` / `sigh` silent login in this skill.
-
-## 3. App ID
-
-Identifiers → App IDs. Create or reuse an **App ID** whose bundle id
-matches the Flutter iOS target **exactly**.
-
-Skip extra capabilities unless the app already needs them. App Attest
-belongs to `/app-check`, not this step.
-
-## 4. Distribution certificate (private key stays local)
-
-Preferred path (private key is created on this Mac):
-
-1. Xcode → Settings → Accounts → select the team → **Manage Certificates**.
-2. **+** → **Apple Distribution**.
-3. Keychain Access → **My Certificates** → the new **Apple Distribution**
-   identity → Export → `.p12`. Set a password; that is
-   `IOS_DISTRIBUTION_CERT_PASSWORD`.
-
-If they generate a CSR and upload it on the portal instead, the matching
-private key is the one Keychain created **with that CSR**. Downloading
-only the `.cer` from the portal is not enough — codesign in CI will fail
-with an empty identity.
-
-Confirm the export contains a key:
+## 2. Distribution certificate and p12
 
 ```bash
-openssl pkcs12 -in "$P12_PATH" -nokeys -passin pass:"$P12_PASSWORD" >/dev/null
-openssl pkcs12 -in "$P12_PATH" -nocerts -passin pass:"$P12_PASSWORD" -passout pass:tmp >/dev/null
+$H identities
 ```
 
-Both must succeed. If the second fails, re-export from **My Certificates**
-(the identity with a disclosure triangle / private key), not from
-**Certificates**.
+Pick by SHA-1. A revoked certificate can share its name with the valid one.
+A team holds three Distribution certificates at most, so reuse before creating,
+and leave any certificate that other apps use alone.
 
-## 5. Profile and App Store Connect API key
+**A. Reuse a valid one from this Mac.** Keychain Access → **My Certificates**
+(the identity with a key under it) → right-click → Export → `.p12`, into
+`~/ios-signing/`. No file in that folder means the export was cancelled or saved
+elsewhere; ask again before moving on.
 
-Still in Chrome, with them confirming each create:
-
-1. **Profiles** → **+** → **App Store Connect** (distribution) → that App
-   ID → the Distribution cert from step 4 → download `.mobileprovision`.
-2. Read the UUID (this is `IOS_PROVISIONING_PROFILE_UUID`):
-
-   ```bash
-   security cms -D -i "$PROFILE_PATH" 2>/dev/null \
-     | python3 -c "import sys,re; t=sys.stdin.read(); m=re.search(r'<key>UUID</key>\s*<string>([^<]+)</string>', t); print(m.group(1) if m else 'UUID-NOT-FOUND')"
-   ```
-
-3. [App Store Connect → Integrations → App Store Connect API](https://appstoreconnect.apple.com/access/integrations/api)
-   → **Team** key with at least **App Manager**. Download the `.p8`
-   **once**. Copy **Key ID** and **Issuer ID**.
-
-Keep the `.p12`, `.mobileprovision`, and `.p8` outside the repo
-(e.g. a local `~/ios-signing/` directory that is not a git remount of
-the app).
-
-## 6. Encode and set secrets
-
-macOS `base64` wraps lines. Strip them:
+**B. Create one, no Xcode.**
 
 ```bash
-b64() { base64 -i "$1" | tr -d '\n'; }
+$H csr --email "<apple id email>"            # key stays in ~/ios-signing
 ```
 
-For **each** of the seven secrets, in this order:
-
-1. Show the secret **name** and a fingerprint only (`wc -c` plus first
-   and last four characters of the value). Do not dump the body.
-2. Ask: set `NAME` on this repo?
-3. Only after yes:
-
-   ```bash
-   # file-backed (p12, profile, p8)
-   b64 "$PATH_TO_FILE" | gh secret set NAME
-
-   # short strings (password, uuid, key id, issuer id)
-   printf '%s' "$VALUE" | gh secret set NAME
-   ```
-
-`gh` infers the repo from remotes. Do not add `--repo` unless they asked
-to write to a different repository.
-
-If they say no to a secret, skip it and list what is still missing.
-
-## 7. Verify
+Portal → Certificates → **+** → Apple Distribution → upload `dist.csr` →
+download the `.cer` into `~/ios-signing/`. Then:
 
 ```bash
-gh secret list
+$H p12 --key ~/ios-signing/dist.key --cer ~/ios-signing/<name>.cer --out ~/ios-signing/dist.p12
 ```
 
-All seven names should appear. Then a dry signing build (no upload):
+**C. Xcode:** Settings → Accounts → Manage Certificates → **+** → Apple
+Distribution, then export as in A.
 
 ```bash
-gh workflow run Release -f upload_target=none -f force=true
-gh run watch
+$H verify-p12 --p12 ~/ios-signing/dist.p12   # hidden password prompt
 ```
 
-`upload_target=none` still imports the cert and profile and runs
-`flutter build ipa`. Fix signing errors before enabling TestFlight or
-App Store Connect upload.
+Done when `verify-p12` exits 0 with `private key : present`, an expiry in the
+future, and a team id. Record the team id and SHA-1.
+
+## 3. Team ID
+
+Replace `YOUR_TEAM_ID` in `.github/workflows/release.yml` with the team id from
+step 2. Show the one-line diff.
+
+## 4. App ID and provisioning profile
+
+Portal → Identifiers → **+** → App IDs → App → Explicit, the bundle id, no
+capabilities. App Attest belongs to `/app-check`.
+
+Portal → Profiles → **+** → Distribution → **App Store Connect** → that App ID →
+the certificate from step 2 (match the expiry) → name it `<app> App Store` →
+Generate → Download.
+
+```bash
+$H profile-info ~/Downloads/<name>.mobileprovision --bundle-id <bundle id>
+```
+
+Name the file in the command from the profile name chosen in the portal. The
+newest `.mobileprovision` by timestamp can be another app's.
+
+Done when `profile-info` exits 0 with `type : app-store`, a matching app id, and
+a future expiry. Record the UUID.
+
+## 5. App Store Connect API key
+
+Portal → Users and Access → Integrations → App Store Connect API → Team Keys →
+**+** → name `<app>-ci`, access **App Manager** → Generate. Copy the **Key ID**
+from the row and the **Issuer ID** from the top of the page. **Download API
+Key** works once; save it to `~/ios-signing/`, not Downloads.
+
+```bash
+openssl pkey -in ~/ios-signing/AuthKey_<KEYID>.p8 -noout && echo valid
+```
+
+Done when the `.p8` validates and its file name carries the Key ID.
+
+## 6. GitHub secrets
+
+| Secret | Source |
+|---|---|
+| `IOS_DISTRIBUTION_CERT_P12` | `--file` the p12 |
+| `IOS_DISTRIBUTION_CERT_PASSWORD` | `--prompt` (hidden) |
+| `IOS_PROVISIONING_PROFILE` | `--file` the `.mobileprovision` |
+| `IOS_PROVISIONING_PROFILE_UUID` | `--env` from step 4 |
+| `APP_STORE_CONNECT_API_KEY_ID` | `--env` from step 5 |
+| `APP_STORE_CONNECT_ISSUER_ID` | `--env` from step 5 |
+| `APP_STORE_CONNECT_API_KEY_CONTENT` | `--file` the `.p8` |
+
+Show the table with the repo name, then ask which to set. One yes covers the
+names listed. Each secret is one call:
+
+```bash
+$H set-secret NAME --repo OWNER/REPO --file PATH      # or --prompt
+KEYID=ABC123DEFG $H set-secret APP_STORE_CONNECT_API_KEY_ID --repo OWNER/REPO --env KEYID
+```
+
+Done when `gh secret list --repo OWNER/REPO` shows all seven.
+
+## 7. Dry run
+
+The workflow must be on GitHub. Commit and push first, with the user's yes.
+
+```bash
+gh workflow run Release --repo OWNER/REPO -f upload_target=none -f force=true
+gh run list --repo OWNER/REPO --workflow Release --limit 1
+gh run view RUN_ID --repo OWNER/REPO --json status,conclusion,jobs
+```
+
+Read `conclusion`; `gh run watch` exits 0 even when it lost its login. A pass
+means certificate, password, profile and build config all work. Failures map to
+causes in [troubleshooting.md](troubleshooting.md).
+
+Done when the run's `conclusion` is `success`.
+
+## 8. Tidy
+
+Signing files live in `~/ios-signing/` (mode 700). The `.p8` cannot be
+downloaded again; keep one copy there or delete it, since a new key replaces it.
 
 ## Do not
 
-- Promise that Chrome can export the cert private key from the portal.
-- Run `gh secret set` without a per-secret confirmation.
+- Run `gh secret set` for names the user has not seen listed.
 - Commit `.p12`, `.p8`, `.mobileprovision`, or base64 of them.
-- Bake `--dart-define` into `release.yml` to force flags or skip App
-  Check. That defeats Remote Config for the life of the IPA.
-- Replace `release.yml` with a different signing scheme in this skill.
-  Change secrets and `YOUR_TEAM_ID` only.
+- Bake `--dart-define` into `release.yml`: it beats Remote Config for the life
+  of the IPA.
+- Replace `release.yml`'s signing scheme here. Change secrets and the team id only.

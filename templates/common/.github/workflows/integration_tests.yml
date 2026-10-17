@@ -49,7 +49,8 @@ jobs:
     needs: [classify, unit-tests]
     if: needs.classify.outputs.flutter_integration == 'true'
     # {{RUNNER_LABEL}} — default macos-latest. /self-hosted-runner swaps this
-    # to a label like [self-hosted, macOS, my-runner].
+    # to a label like [self-hosted, macOS, my-runner]. Tests never touch the
+    # keychain, so your own Mac is a fine runner for this job.
     runs-on: {{RUNNER_LABEL}}
     env:
       HEADLESS_SIMULATOR: 'true'

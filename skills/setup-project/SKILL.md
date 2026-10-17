@@ -33,9 +33,12 @@ Ask these in order. Do not invent extra questions.
    follow. Say what each flavour means in one line, as in `/sync-model`.
 4. **iOS release CI now**, or later (`/ios-ci-setup`)? If now, ask for
    Apple Team ID if they have it; otherwise leave `YOUR_TEAM_ID`.
-5. **Self-hosted Mac runner now**, or later (`/self-hosted-runner`)? If now,
-   ask for the runner label (default suggestion: `app-runner`). If later,
-   `runs-on` stays `macos-latest`.
+5. **Use this Mac as a runner?** Integration tests only (recommended: tests
+   never touch signing) / integration tests and release / later
+   (`/self-hosted-runner`). If now, ask for the runner label (suggestion:
+   `app-runner`). Release stays on hosted `macos-latest` unless they pick the
+   second option; say that signing changes the keychain search list while it
+   runs, and that a dedicated user or machine suits it better than a dev Mac.
 6. **Localization?** Will the app ship in more than English? If yes: **which
    languages besides English?** Accept names or codes; you convert them to
    ISO 639-1 codes (`fr`, `de`, `pt_BR`). "Yes, but English only for now"
@@ -46,8 +49,9 @@ Defaults you may assume after they answer:
 
 | Placeholder | Default |
 |---|---|
-| `FLUTTER_VERSION` | `3.47.2` |
-| `RUNNER_LABEL` | `macos-latest` (or `[self-hosted, macOS, <label>]` if they want a runner now) |
+| `FLUTTER_VERSION` | the installed SDK (`render.py` reads `flutter --version`), so CI never pins an SDK older than the Dart constraint `flutter create` wrote |
+| `RUNNER_LABEL` | integration tests: `macos-latest`, or `[self-hosted, macOS, <label>]` if they want a runner now |
+| `RELEASE_RUNNER_LABEL` | `macos-latest`, or `[self-hosted, macOS, <label>]` only if they chose release too |
 | `APPLE_TEAM_ID` | `YOUR_TEAM_ID` |
 
 Derive `PACKAGE_NAME` by lowercasing the app name and replacing non-alphanumerics
@@ -89,8 +93,8 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/render.py" \
   --dest . \
   --app-name "<APP_NAME>" \
   --bundle-id "<BUNDLE_ID>" \
-  --flutter-version 3.47.2 \
   --runner-label "<RUNNER_LABEL>" \
+  --release-runner-label "<RELEASE_RUNNER_LABEL>" \
   --apple-team-id "<APPLE_TEAM_ID>" \
   --force
 ```
@@ -184,8 +188,8 @@ secrets in GitHub — this skill only wrote `release.yml`.
 If they chose localization, say the translations are machine drafts that a
 native speaker should review before release.
 
-If they chose a self-hosted runner now, remind them `/self-hosted-runner`
-still has to register the machine — this skill only set `runs-on`.
+If they chose a local runner now, remind them `/self-hosted-runner` still has
+to register the machine — this skill only set `runs-on`.
 
 ## 8. Do not
 

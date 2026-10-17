@@ -38,7 +38,11 @@ jobs:
   release:
     needs: check-main-build
     if: ${{ !cancelled() && (needs.check-main-build.outputs.green == 'true' || inputs.force == true) }}
-    runs-on: macos-latest
+    # Hosted macOS by default. Signing adds a temporary keychain to the user
+    # search list for the length of the job: safe on a throwaway VM, so point
+    # this at your own Mac only if it is a dedicated user or machine, not the
+    # one you develop on.
+    runs-on: {{RELEASE_RUNNER_LABEL}}
     permissions:
       contents: write
     steps:
@@ -93,14 +97,18 @@ jobs:
           IOS_DISTRIBUTION_CERT_P12: ${{ secrets.IOS_DISTRIBUTION_CERT_P12 }}
           IOS_DISTRIBUTION_CERT_PASSWORD: ${{ secrets.IOS_DISTRIBUTION_CERT_PASSWORD }}
         run: |
-          KEYCHAIN_PATH=$RUNNER_TEMP/build.keychain
+          KEYCHAIN_PATH=$RUNNER_TEMP/build-$GITHUB_RUN_ID.keychain
           KEYCHAIN_PASSWORD=$(uuidgen)
+          # Remember the user's keychains so cleanup can put them back.
+          security list-keychains -d user | tr -d '"' | sed 's/^ *//' > "$RUNNER_TEMP/keychains.orig"
           security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
           security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
           echo "$IOS_DISTRIBUTION_CERT_P12" | base64 --decode > /tmp/cert.p12
           security import /tmp/cert.p12 -k "$KEYCHAIN_PATH" -P "$IOS_DISTRIBUTION_CERT_PASSWORD" -T /usr/bin/codesign
-          security list-keychain -d user -s "$KEYCHAIN_PATH"
+          # Add the CI keychain in front of the existing ones. Replacing the list
+          # hides the login keychain and Apple's intermediate certificates.
+          security list-keychain -d user -s "$KEYCHAIN_PATH" $(cat "$RUNNER_TEMP/keychains.orig")
           security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
           rm /tmp/cert.p12
 
@@ -214,4 +222,8 @@ jobs:
 
       - name: Clean up keychain
         if: always()
-        run: security delete-keychain $RUNNER_TEMP/build.keychain || true
+        run: |
+          if [ -s "$RUNNER_TEMP/keychains.orig" ]; then
+            security list-keychain -d user -s $(cat "$RUNNER_TEMP/keychains.orig") || true
+          fi
+          security delete-keychain "$RUNNER_TEMP/build-$GITHUB_RUN_ID.keychain" || true
