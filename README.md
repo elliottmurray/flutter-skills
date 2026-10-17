@@ -26,7 +26,10 @@ Markdown, so Cursor could use them later.
 | A GitHub repo with Actions enabled | The rendered workflows are GitHub Actions. Nothing here emits GitLab CI, Bitrise or Codemagic |
 
 `release.yml` and the integration job run on `macos-latest`, billed at 10× the
-minute rate on a private repo. `/self-hosted-runner` moves them to a Mac you own.
+minute rate on a private repo. `/self-hosted-runner` moves the integration
+tests to a Mac you own. Release stays hosted by default, because signing
+changes the keychain search list while it runs; move it only to a dedicated
+user or machine, not the Mac you develop on.
 
 Shipping to TestFlight or the App Store also needs a paid **Apple Developer
 Program** membership and an **Admin** or **Account Holder** role on the team.
@@ -40,9 +43,13 @@ without paying Apple.
 `/ios-ci-setup`, `/firebase-setup` and `/app-check` do most of their work in
 the Apple and Firebase web consoles. With the Claude in Chrome extension
 connected (`claude --chrome`), Claude clicks through those pages in your own
-Chrome window while you watch and confirm each create. Without it, Claude
-names the page and the button and waits for you. You sign in and clear 2FA
-yourself either way. Claude never sees your Apple or Google password.
+Chrome window while you watch and confirm each create. Without it, which is
+the default, Claude names the page and the button and waits for you. You sign
+in and clear 2FA yourself either way. Claude never sees your Apple or Google
+password.
+
+What reaches the conversation, and what stays local, is in
+[docs/secrets.md](docs/secrets.md).
 
 [docs/chrome.md](docs/chrome.md) covers setup, which sites to allow, what a
 run looks like, and which steps stay with you.
@@ -91,7 +98,7 @@ Skills you use to ship it:
 | `/feature-flags` | Add, graduate and delete Remote Config flags |
 | `/pr-review` | Risk rubric for PRs, alongside the `@claude` workflow |
 | `/flutter-sdk-check` | Bump the pinned `flutter-version` across workflows |
-| `/self-hosted-runner` | Run the Mac CI jobs on a Mac you own instead of `macos-latest` |
+| `/self-hosted-runner` | Run the integration tests on a Mac you own instead of `macos-latest`; release stays hosted unless you choose otherwise |
 
 [CATALOG.md](CATALOG.md) lists what each skill needs before it will run.
 

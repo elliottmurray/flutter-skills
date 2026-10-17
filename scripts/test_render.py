@@ -2,11 +2,21 @@
 """Tiny stdlib tests for render.py helpers."""
 
 import json
+import re
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
-from render import copy_tree, is_skipped, package_name, render_text, main as render_main
+from render import (
+    copy_tree,
+    detect_flutter_version,
+    is_skipped,
+    package_name,
+    render_text,
+    main as render_main,
+)
 
 
 class PackageNameTest(unittest.TestCase):
@@ -232,6 +242,62 @@ class RenderTest(unittest.TestCase):
                     "--sync-model", "intent",
                 ]
             )
+
+
+class RunnerAndSigningTest(unittest.TestCase):
+    def render(self, *extra):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        dest = Path(tmp.name) / "app"
+        dest.mkdir()
+        rc = render_main(["--dest", str(dest), "--app-name", "Demo",
+                          "--bundle-id", "com.example.demo",
+                          "--flutter-version", "3.99.0", *extra])
+        self.assertEqual(rc, 0)
+        return dest
+
+    def workflow(self, dest, name):
+        return (dest / ".github" / "workflows" / name).read_text()
+
+    def test_release_stays_hosted_when_tests_use_a_local_mac(self):
+        dest = self.render("--runner-label", "[self-hosted, macOS, mac]")
+        self.assertIn("runs-on: [self-hosted, macOS, mac]",
+                      self.workflow(dest, "integration_tests.yml"))
+        self.assertIn("runs-on: macos-latest",
+                      self.workflow(dest, "release.yml"))
+
+    def test_release_runner_can_be_chosen_separately(self):
+        dest = self.render("--release-runner-label", "[self-hosted, macOS, rel]")
+        self.assertIn("runs-on: [self-hosted, macOS, rel]",
+                      self.workflow(dest, "release.yml"))
+        self.assertIn("runs-on: macos-latest",
+                      self.workflow(dest, "integration_tests.yml"))
+
+    def test_release_keeps_the_users_keychains(self):
+        text = self.workflow(self.render(), "release.yml")
+        self.assertIn("keychains.orig", text)
+        self.assertNotIn('list-keychain -d user -s "$KEYCHAIN_PATH"\n', text)
+        self.assertGreaterEqual(
+            text.count('$(cat "$RUNNER_TEMP/keychains.orig")'), 2, "add and restore")
+
+    def test_no_placeholder_survives(self):
+        dest = self.render()
+        for wf in (dest / ".github" / "workflows").glob("*.yml"):
+            self.assertIsNone(re.search(r"\{\{[A-Z_]+\}\}", wf.read_text()), wf.name)
+
+    def test_helper_has_no_unused_flutter_test_import(self):
+        helper = self.render() / "integration_test" / "app_test_helper.dart"
+        self.assertNotIn("flutter_test", helper.read_text())
+
+    def test_detects_the_installed_flutter_sdk(self):
+        done = subprocess.CompletedProcess(
+            [], 0, stdout='Doctor noise\n{"frameworkVersion": "3.47.5"}\n')
+        with mock.patch("render.subprocess.run", return_value=done):
+            self.assertEqual(detect_flutter_version(), "3.47.5")
+
+    def test_falls_back_when_flutter_is_missing(self):
+        with mock.patch("render.subprocess.run", side_effect=FileNotFoundError):
+            self.assertEqual(detect_flutter_version(), "3.47.2")
 
 
 if __name__ == "__main__":
