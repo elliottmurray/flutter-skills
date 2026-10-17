@@ -143,6 +143,25 @@ interview. Step 2 (render) is already done. That means: add the dependencies,
 wire `MaterialApp`, then `flutter gen-l10n`, analyze and test. Do this before
 step 7, so `flutter test` there includes `test/l10n/`.
 
+## 4d. Enable the plugin for the project
+
+The complexity, model-sync and l10n-parity hooks ship in this plugin's
+`hooks/hooks.json` and load whenever the plugin is enabled. Do not copy them
+into the project. Make sure teammates and CI get the plugin by committing it
+to `.claude/settings.json`. Merge into the file if it exists; never replace it:
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "lastmile": { "source": { "source": "github", "repo": "elliottmurray/lastmile" } }
+  },
+  "enabledPlugins": { "lastmile@lastmile": true }
+}
+```
+
+Append `.claude/settings.local.json` to the project `.gitignore` if it is not
+already there. Commit `.claude/settings.json` and `CLAUDE.md`.
+
 ## 5. iOS bundle id
 
 If `flutter create` used `--org` correctly, skip. Otherwise set
